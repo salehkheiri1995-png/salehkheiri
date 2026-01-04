@@ -155,8 +155,8 @@ export default function Cart() {
                     </div>
                   </div>
 
-                  <Button className="w-full" size="lg">
-                    تکمیل سفارش
+                  <Button asChild className="w-full" size="lg">
+                    <Link to="/checkout">تکمیل سفارش</Link>
                   </Button>
 
                   <Button asChild variant="outline" className="w-full mt-3">

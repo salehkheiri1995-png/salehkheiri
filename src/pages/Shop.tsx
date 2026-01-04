@@ -92,7 +92,7 @@ export default function Shop() {
                   className="group bg-card rounded-2xl overflow-hidden shadow-card hover-lift"
                 >
                   {/* Image */}
-                  <div className="relative aspect-square overflow-hidden bg-muted">
+                  <Link to={`/shop/${product.id}`} className="relative aspect-square overflow-hidden bg-muted block">
                     <img
                       src={product.image_url || "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=400&h=400&fit=crop"}
                       alt={product.name}
@@ -118,12 +118,14 @@ export default function Shop() {
                         <Heart className="w-4 h-4" />
                       </button>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Content */}
                   <div className="p-4">
                     <p className="text-xs text-muted-foreground mb-1">{product.brand}</p>
-                    <h3 className="font-bold mb-2 line-clamp-1">{product.name}</h3>
+                    <Link to={`/shop/${product.id}`}>
+                      <h3 className="font-bold mb-2 line-clamp-1 hover:text-primary transition-colors">{product.name}</h3>
+                    </Link>
 
                     {/* Rating */}
                     <div className="flex items-center gap-1 mb-3">
