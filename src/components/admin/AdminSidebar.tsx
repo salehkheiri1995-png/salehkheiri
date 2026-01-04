@@ -14,7 +14,8 @@ import {
   ChevronRight,
   MessageSquare,
   UserCircle,
-  BookOpen
+  BookOpen,
+  Camera
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ const menuItems = [
   { icon: Package, label: "محصولات", href: "/admin/products" },
   { icon: GraduationCap, label: "دوره‌ها", href: "/admin/courses" },
   { icon: BookOpen, label: "ثبت‌نام دوره‌ها", href: "/admin/enrollments" },
+  { icon: Camera, label: "نمونه‌کارها", href: "/admin/portfolio" },
   { icon: Calendar, label: "رزروها", href: "/admin/bookings" },
   { icon: ShoppingCart, label: "سفارشات", href: "/admin/orders" },
   { icon: Truck, label: "روش‌های ارسال", href: "/admin/shipping" },
