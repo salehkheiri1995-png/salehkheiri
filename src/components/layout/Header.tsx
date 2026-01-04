@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, ShoppingBag, Calendar, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { href: "/", label: "خانه" },
@@ -10,14 +11,13 @@ const navLinks = [
   { href: "/specialists", label: "متخصصان" },
   { href: "/courses", label: "دوره‌های آموزشی" },
   { href: "/shop", label: "فروشگاه" },
-  { href: "/portfolio", label: "نمونه‌کارها" },
-  { href: "/blog", label: "وبلاگ" },
-  { href: "/contact", label: "تماس با ما" },
+  { href: "/booking", label: "رزرو نوبت" },
 ];
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user, isAdmin } = useAuth();
 
   return (
     <header className="fixed top-0 right-0 left-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
@@ -50,15 +50,34 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <ShoppingBag className="w-5 h-5" />
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+              <Link to="/shop">
+                <ShoppingBag className="w-5 h-5" />
+              </Link>
             </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <User className="w-5 h-5" />
-            </Button>
-            <Button variant="default" className="gap-2">
-              <Calendar className="w-4 h-4" />
-              رزرو نوبت
+            {user ? (
+              <>
+                {isAdmin && (
+                  <Button asChild variant="ghost" size="sm">
+                    <Link to="/admin">پنل مدیریت</Link>
+                  </Button>
+                )}
+                <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                  <Link to="/auth">
+                    <User className="w-5 h-5" />
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/auth">ورود / ثبت‌نام</Link>
+              </Button>
+            )}
+            <Button asChild variant="default" className="gap-2">
+              <Link to="/booking">
+                <Calendar className="w-4 h-4" />
+                رزرو نوبت
+              </Link>
             </Button>
           </div>
 
@@ -96,14 +115,27 @@ export function Header() {
                   {link.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  پنل مدیریت
+                </Link>
+              )}
               <div className="flex gap-2 pt-4 border-t border-border mt-2">
-                <Button variant="outline" className="flex-1 gap-2">
-                  <User className="w-4 h-4" />
-                  ورود
+                <Button asChild variant="outline" className="flex-1 gap-2">
+                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                    <User className="w-4 h-4" />
+                    {user ? "پروفایل" : "ورود"}
+                  </Link>
                 </Button>
-                <Button variant="default" className="flex-1 gap-2">
-                  <Calendar className="w-4 h-4" />
-                  رزرو نوبت
+                <Button asChild variant="default" className="flex-1 gap-2">
+                  <Link to="/booking" onClick={() => setIsOpen(false)}>
+                    <Calendar className="w-4 h-4" />
+                    رزرو نوبت
+                  </Link>
                 </Button>
               </div>
             </nav>
