@@ -7,6 +7,10 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Services from "./pages/Services";
+import Courses from "./pages/Courses";
+import Shop from "./pages/Shop";
+import Specialists from "./pages/Specialists";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminServices from "./pages/admin/Services";
@@ -28,6 +32,10 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/courses" element={<Courses />} />
+            <Route path="/shop" element={<Shop />} />
+            <Route path="/specialists" element={<Specialists />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>
