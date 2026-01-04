@@ -116,7 +116,7 @@ export function SpecialistsSection() {
                 <Button variant="outline" size="sm" className="flex-1">
                   <Instagram className="w-4 h-4" />
                 </Button>
-                <Button size="sm" className="flex-1" onClick={() => navigate("/booking")}>
+                <Button size="sm" className="flex-1" onClick={() => navigate(`/booking?specialistName=${encodeURIComponent(specialist.name)}`)}>
                   رزرو نوبت
                 </Button>
               </div>
