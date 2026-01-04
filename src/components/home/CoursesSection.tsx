@@ -4,48 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useSalonSettings } from "@/hooks/useSalonSettings";
-
-const courses = [
-  {
-    title: "دوره جامع آرایش عروس",
-    instructor: "سارا احمدی",
-    image: "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&h=400&fit=crop",
-    duration: "۴۰ ساعت",
-    students: 234,
-    rating: 4.9,
-    price: "۲,۵۰۰,۰۰۰",
-    originalPrice: "۳,۵۰۰,۰۰۰",
-    level: "پیشرفته",
-    isNew: true,
-  },
-  {
-    title: "آموزش مراقبت پوست",
-    instructor: "نیلوفر رضایی",
-    image: "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=600&h=400&fit=crop",
-    duration: "۲۵ ساعت",
-    students: 456,
-    rating: 4.8,
-    price: "۱,۸۰۰,۰۰۰",
-    originalPrice: null,
-    level: "متوسط",
-    isNew: false,
-  },
-  {
-    title: "دوره تخصصی کراتین و احیا مو",
-    instructor: "مریم کریمی",
-    image: "https://images.unsplash.com/photo-1522337094846-8a818192de1f?w=600&h=400&fit=crop",
-    duration: "۱۵ ساعت",
-    students: 178,
-    rating: 4.7,
-    price: "۱,۲۰۰,۰۰۰",
-    originalPrice: "۱,۵۰۰,۰۰۰",
-    level: "مبتدی",
-    isNew: false,
-  },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function CoursesSection() {
   const { data: settings } = useSalonSettings();
+
+  const { data: courses, isLoading } = useQuery({
+    queryKey: ["home-courses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return data;
+    },
+  });
 
   const parseTitle = (title: string) => {
     const match = title.match(/^(.+?)\s+(\S+)\s+(.+)$/);
@@ -56,6 +34,10 @@ export function CoursesSection() {
   };
 
   const titleParts = parseTitle(settings?.home_courses_title || "آموزش حرفه‌ای زیبایی");
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("fa-IR").format(price);
+  };
 
   return (
     <section className="py-24 bg-muted/30">
@@ -85,80 +67,92 @@ export function CoursesSection() {
         </motion.div>
 
         {/* Courses Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {courses.map((course, index) => (
-            <motion.div
-              key={course.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group bg-card rounded-2xl overflow-hidden shadow-card hover-lift"
-            >
-              {/* Image */}
-              <div className="relative h-48 overflow-hidden">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
-                
-                {/* Play Button */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center">
-                    <Play className="w-6 h-6 text-primary-foreground fill-primary-foreground" />
+        {isLoading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <Skeleton key={i} className="h-96 rounded-2xl" />
+            ))}
+          </div>
+        ) : courses && courses.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course, index) => (
+              <motion.div
+                key={course.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="group bg-card rounded-2xl overflow-hidden shadow-card hover-lift"
+              >
+                {/* Image */}
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={course.image_url || "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&h=400&fit=crop"}
+                    alt={course.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
+                  
+                  {/* Play Button */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center">
+                      <Play className="w-6 h-6 text-primary-foreground fill-primary-foreground" />
+                    </div>
                   </div>
-                </div>
 
-                {/* Badges */}
-                <div className="absolute top-4 right-4 flex gap-2">
-                  {course.isNew && (
-                    <Badge className="bg-accent text-accent-foreground">جدید</Badge>
-                  )}
-                  <Badge variant="secondary">{course.level}</Badge>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <h3 className="text-lg font-bold mb-2 line-clamp-1">{course.title}</h3>
-                <p className="text-muted-foreground text-sm mb-4">مدرس: {course.instructor}</p>
-
-                {/* Stats */}
-                <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
-                    {course.duration}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {course.students} دانشجو
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-accent fill-accent" />
-                    {course.rating}
-                  </span>
-                </div>
-
-                {/* Price */}
-                <div className="flex items-center justify-between pt-4 border-t border-border">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-primary">{course.price} تومان</span>
-                    {course.originalPrice && (
-                      <span className="text-sm text-muted-foreground line-through">
-                        {course.originalPrice}
-                      </span>
+                  {/* Badges */}
+                  <div className="absolute top-4 right-4 flex gap-2">
+                    {course.is_new && (
+                      <Badge className="bg-accent text-accent-foreground">جدید</Badge>
                     )}
+                    {course.level && <Badge variant="secondary">{course.level}</Badge>}
                   </div>
-                  <Button size="sm" asChild>
-                    <Link to="/courses">ثبت‌نام</Link>
-                  </Button>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <h3 className="text-lg font-bold mb-2 line-clamp-1">{course.title}</h3>
+                  <p className="text-muted-foreground text-sm mb-4">مدرس: {course.instructor_name || "نامشخص"}</p>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      {course.duration_hours} ساعت
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {course.students_count} دانشجو
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-accent fill-accent" />
+                      {Number(course.rating).toFixed(1)}
+                    </span>
+                  </div>
+
+                  {/* Price */}
+                  <div className="flex items-center justify-between pt-4 border-t border-border">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-primary">{formatPrice(Number(course.price))} تومان</span>
+                      {course.original_price && (
+                        <span className="text-sm text-muted-foreground line-through">
+                          {formatPrice(Number(course.original_price))}
+                        </span>
+                      )}
+                    </div>
+                    <Button size="sm" asChild>
+                      <Link to={`/courses/${course.id}`}>ثبت‌نام</Link>
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            هنوز دوره‌ای ثبت نشده است
+          </div>
+        )}
       </div>
     </section>
   );
