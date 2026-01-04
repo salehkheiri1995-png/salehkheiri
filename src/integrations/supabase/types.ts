@@ -766,6 +766,60 @@ export type Database = {
         }
         Relationships: []
       }
+      theme_settings: {
+        Row: {
+          accent_color: string | null
+          background_color: string | null
+          base_font_size: string | null
+          border_radius: string | null
+          card_color: string | null
+          created_at: string
+          font_family: string | null
+          foreground_color: string | null
+          heading_font_family: string | null
+          heading_scale: number | null
+          id: string
+          muted_color: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string | null
+          background_color?: string | null
+          base_font_size?: string | null
+          border_radius?: string | null
+          card_color?: string | null
+          created_at?: string
+          font_family?: string | null
+          foreground_color?: string | null
+          heading_font_family?: string | null
+          heading_scale?: number | null
+          id?: string
+          muted_color?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string | null
+          background_color?: string | null
+          base_font_size?: string | null
+          border_radius?: string | null
+          card_color?: string | null
+          created_at?: string
+          font_family?: string | null
+          foreground_color?: string | null
+          heading_font_family?: string | null
+          heading_scale?: number | null
+          id?: string
+          muted_color?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
