@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2, Check, X, Clock } from "lucide-react";
+import { Search, Loader2, Check, X, Clock, FileSpreadsheet, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { exportToExcel, formatBookingsForExport } from "@/lib/excelExport";
+import { SendNotificationDialog } from "@/components/admin/SendNotificationDialog";
 
 interface Booking {
   id: string;
@@ -89,11 +91,28 @@ export default function AdminBookings() {
     return new Date(date).toLocaleDateString("fa-IR");
   };
 
+  const handleExport = () => {
+    const exportData = formatBookingsForExport(filteredBookings);
+    exportToExcel(exportData, `رزروها-${new Date().toLocaleDateString('fa-IR')}`, 'رزروها');
+  };
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">مدیریت رزروها</h1>
-        <p className="text-muted-foreground mt-1">{bookings.length} رزرو</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+            <Calendar className="w-8 h-8" />
+            مدیریت رزروها
+          </h1>
+          <p className="text-muted-foreground mt-1">{bookings.length} رزرو</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} className="gap-2">
+            <FileSpreadsheet className="w-4 h-4" />
+            خروجی Excel
+          </Button>
+          <SendNotificationDialog />
+        </div>
       </div>
 
       <div className="relative mb-6">
