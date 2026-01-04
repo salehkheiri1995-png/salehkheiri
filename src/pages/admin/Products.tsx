@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 
 interface Product {
   id: string;
@@ -24,6 +25,7 @@ interface Product {
   price: number;
   original_price: number | null;
   image_url: string | null;
+  gallery_images: string[] | null;
   category: string | null;
   stock: number;
   is_active: boolean;
@@ -43,6 +45,7 @@ export default function AdminProducts() {
     price: 0,
     original_price: 0,
     image_url: "",
+    gallery_images: [] as string[],
     category: "",
     stock: 0,
     is_active: true,
@@ -119,6 +122,7 @@ export default function AdminProducts() {
       price: product.price,
       original_price: product.original_price || 0,
       image_url: product.image_url || "",
+      gallery_images: product.gallery_images || [],
       category: product.category || "",
       stock: product.stock,
       is_active: product.is_active,
@@ -148,6 +152,7 @@ export default function AdminProducts() {
       price: 0,
       original_price: 0,
       image_url: "",
+      gallery_images: [],
       category: "",
       stock: 0,
       is_active: true,
@@ -266,13 +271,13 @@ export default function AdminProducts() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>آدرس تصویر</Label>
-                <Input
-                  value={formData.image_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image_url: e.target.value })
-                  }
-                  dir="ltr"
+                <Label>تصاویر</Label>
+                <MultiImageUpload
+                  featuredImage={formData.image_url}
+                  galleryImages={formData.gallery_images}
+                  onFeaturedChange={(url) => setFormData({ ...formData, image_url: url })}
+                  onGalleryChange={(urls) => setFormData({ ...formData, gallery_images: urls })}
+                  folder="products"
                 />
               </div>
               <div className="flex items-center justify-between">

@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 
 interface Service {
   id: string;
@@ -24,6 +24,7 @@ interface Service {
   price: number;
   duration_minutes: number | null;
   image_url: string | null;
+  gallery_images: string[] | null;
   category: string | null;
   is_active: boolean;
 }
@@ -40,6 +41,7 @@ export default function AdminServices() {
     price: 0,
     duration_minutes: 60,
     image_url: "",
+    gallery_images: [] as string[],
     category: "",
     is_active: true,
   });
@@ -114,6 +116,7 @@ export default function AdminServices() {
       price: service.price,
       duration_minutes: service.duration_minutes || 60,
       image_url: service.image_url || "",
+      gallery_images: service.gallery_images || [],
       category: service.category || "",
       is_active: service.is_active,
     });
@@ -144,6 +147,7 @@ export default function AdminServices() {
       price: 0,
       duration_minutes: 60,
       image_url: "",
+      gallery_images: [],
       category: "",
       is_active: true,
     });
@@ -191,10 +195,12 @@ export default function AdminServices() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>تصویر</Label>
-                <ImageUpload
-                  value={formData.image_url}
-                  onChange={(url) => setFormData({ ...formData, image_url: url })}
+                <Label>تصاویر</Label>
+                <MultiImageUpload
+                  featuredImage={formData.image_url}
+                  galleryImages={formData.gallery_images}
+                  onFeaturedChange={(url) => setFormData({ ...formData, image_url: url })}
+                  onGalleryChange={(urls) => setFormData({ ...formData, gallery_images: urls })}
                   folder="services"
                 />
               </div>

@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 
 interface Specialist {
   id: string;
@@ -23,6 +23,7 @@ interface Specialist {
   title: string | null;
   bio: string | null;
   avatar_url: string | null;
+  gallery_images: string[] | null;
   experience_years: number | null;
   rating: number | null;
   instagram_url: string | null;
@@ -40,6 +41,7 @@ export default function AdminSpecialists() {
     title: "",
     bio: "",
     avatar_url: "",
+    gallery_images: [] as string[],
     experience_years: 0,
     instagram_url: "",
     is_active: true,
@@ -104,6 +106,7 @@ export default function AdminSpecialists() {
       title: specialist.title || "",
       bio: specialist.bio || "",
       avatar_url: specialist.avatar_url || "",
+      gallery_images: specialist.gallery_images || [],
       experience_years: specialist.experience_years || 0,
       instagram_url: specialist.instagram_url || "",
       is_active: specialist.is_active,
@@ -130,6 +133,7 @@ export default function AdminSpecialists() {
       title: "",
       bio: "",
       avatar_url: "",
+      gallery_images: [],
       experience_years: 0,
       instagram_url: "",
       is_active: true,
@@ -162,10 +166,12 @@ export default function AdminSpecialists() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>تصویر</Label>
-                <ImageUpload
-                  value={formData.avatar_url}
-                  onChange={(url) => setFormData({ ...formData, avatar_url: url })}
+                <Label>تصاویر</Label>
+                <MultiImageUpload
+                  featuredImage={formData.avatar_url}
+                  galleryImages={formData.gallery_images}
+                  onFeaturedChange={(url) => setFormData({ ...formData, avatar_url: url })}
+                  onGalleryChange={(urls) => setFormData({ ...formData, gallery_images: urls })}
                   folder="specialists"
                 />
               </div>
