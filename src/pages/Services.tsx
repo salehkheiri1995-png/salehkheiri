@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Services() {
+  const navigate = useNavigate();
+  
   const { data: services, isLoading } = useQuery({
     queryKey: ["services"],
     queryFn: async () => {
@@ -25,6 +27,10 @@ export default function Services() {
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
+  };
+
+  const handleBookService = (serviceId: string) => {
+    navigate(`/booking?service=${serviceId}`);
   };
 
   return (
@@ -98,7 +104,14 @@ export default function Services() {
                         <Clock className="w-4 h-4" />
                         <span>{service.duration_minutes} دقیقه</span>
                       </div>
-                      <Button variant="ghost" className="gap-2 p-0 h-auto text-primary hover:text-primary/80">
+                      <Button 
+                        variant="ghost" 
+                        className="gap-2 p-0 h-auto text-primary hover:text-primary/80"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBookService(service.id);
+                        }}
+                      >
                         رزرو نوبت
                         <ArrowLeft className="w-4 h-4" />
                       </Button>

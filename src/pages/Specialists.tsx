@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Star, Instagram, Award, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Specialists() {
+  const navigate = useNavigate();
+  
   const { data: specialists, isLoading } = useQuery({
     queryKey: ["specialists"],
     queryFn: async () => {
@@ -22,6 +24,10 @@ export default function Specialists() {
       return data;
     },
   });
+
+  const handleBookSpecialist = (specialistId: string) => {
+    navigate(`/booking?specialist=${specialistId}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,7 +117,11 @@ export default function Specialists() {
                         <Instagram className="w-4 h-4" />
                       </Button>
                     )}
-                    <Button size="sm" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => handleBookSpecialist(specialist.id)}
+                    >
                       رزرو نوبت
                     </Button>
                   </div>
