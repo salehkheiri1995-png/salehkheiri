@@ -29,6 +29,8 @@ import AdminBookings from "./pages/admin/Bookings";
 import AdminOrders from "./pages/admin/Orders";
 import AdminShippingMethods from "./pages/admin/ShippingMethods";
 import AdminReviews from "./pages/admin/Reviews";
+import AdminUsers from "./pages/admin/Users";
+import AdminEnrollments from "./pages/admin/Enrollments";
 import AdminSettings from "./pages/admin/Settings";
 import CourseDetail from "./pages/CourseDetail";
 
@@ -69,6 +71,8 @@ const App = () => (
                 <Route path="orders" element={<AdminOrders />} />
                 <Route path="shipping" element={<AdminShippingMethods />} />
                 <Route path="reviews" element={<AdminReviews />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="enrollments" element={<AdminEnrollments />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 
