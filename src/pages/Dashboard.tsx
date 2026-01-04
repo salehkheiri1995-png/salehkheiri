@@ -101,6 +101,26 @@ export default function Dashboard() {
     enabled: !!user?.id,
   });
 
+  // Fetch user orders
+  const { data: orders, isLoading: ordersLoading } = useQuery({
+    queryKey: ["user-orders", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          order_items(*),
+          shipping_methods(name)
+        `)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   // Update profile mutation
   const updateProfile = useMutation({
     mutationFn: async () => {
@@ -249,7 +269,7 @@ export default function Dashboard() {
             <Card className="bg-secondary/50 border-secondary">
               <CardContent className="p-4 text-center">
                 <ShoppingBag className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-2xl font-bold">۰</p>
+                <p className="text-2xl font-bold">{orders?.length || 0}</p>
                 <p className="text-sm text-muted-foreground">سفارش</p>
               </CardContent>
             </Card>
@@ -389,13 +409,73 @@ export default function Dashboard() {
 
               {/* Orders Tab */}
               <TabsContent value="orders">
-                <Card className="p-8 text-center">
-                  <ShoppingBag className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground mb-4">سفارشی ثبت نشده است</p>
-                  <Button asChild variant="outline">
-                    <Link to="/shop">مشاهده فروشگاه</Link>
-                  </Button>
-                </Card>
+                {ordersLoading ? (
+                  <div className="space-y-4">
+                    {[...Array(2)].map((_, i) => (
+                      <Skeleton key={i} className="h-32 rounded-xl" />
+                    ))}
+                  </div>
+                ) : orders && orders.length > 0 ? (
+                  <div className="space-y-4">
+                    {orders.map((order: any) => (
+                      <Card key={order.id} className="overflow-hidden">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <p className="text-sm text-muted-foreground">کد سفارش</p>
+                              <p className="font-bold">{order.id.slice(0, 8).toUpperCase()}</p>
+                            </div>
+                            {(() => {
+                              const status = order.status;
+                              switch (status) {
+                                case "pending":
+                                  return <Badge variant="secondary">در انتظار</Badge>;
+                                case "confirmed":
+                                  return <Badge className="bg-green-500">تایید شده</Badge>;
+                                case "processing":
+                                  return <Badge className="bg-blue-500">در حال آماده‌سازی</Badge>;
+                                case "shipped":
+                                  return <Badge className="bg-purple-500">ارسال شده</Badge>;
+                                case "delivered":
+                                  return <Badge className="bg-emerald-500">تحویل داده شده</Badge>;
+                                case "cancelled":
+                                  return <Badge variant="destructive">لغو شده</Badge>;
+                                default:
+                                  return <Badge>{status}</Badge>;
+                              }
+                            })()}
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <p className="text-muted-foreground">تاریخ</p>
+                              <p>{new Date(order.created_at).toLocaleDateString("fa-IR")}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">تعداد اقلام</p>
+                              <p>{order.order_items?.length || 0} محصول</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">روش ارسال</p>
+                              <p>{order.shipping_methods?.name || "نامشخص"}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">مبلغ کل</p>
+                              <p className="font-bold text-primary">{formatPrice(order.total)} تومان</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="p-8 text-center">
+                    <ShoppingBag className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground mb-4">سفارشی ثبت نشده است</p>
+                    <Button asChild variant="outline">
+                      <Link to="/shop">مشاهده فروشگاه</Link>
+                    </Button>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Courses Tab */}

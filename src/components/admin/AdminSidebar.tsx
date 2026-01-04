@@ -6,6 +6,8 @@ import {
   Package, 
   GraduationCap, 
   Calendar, 
+  ShoppingCart,
+  Truck,
   Settings,
   LogOut,
   Sparkles,
@@ -21,6 +23,8 @@ const menuItems = [
   { icon: Package, label: "محصولات", href: "/admin/products" },
   { icon: GraduationCap, label: "دوره‌ها", href: "/admin/courses" },
   { icon: Calendar, label: "رزروها", href: "/admin/bookings" },
+  { icon: ShoppingCart, label: "سفارشات", href: "/admin/orders" },
+  { icon: Truck, label: "روش‌های ارسال", href: "/admin/shipping" },
   { icon: Settings, label: "تنظیمات", href: "/admin/settings" },
 ];
 

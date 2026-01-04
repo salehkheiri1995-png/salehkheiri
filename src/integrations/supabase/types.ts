@@ -333,6 +333,7 @@ export type Database = {
           id: string
           notes: string | null
           shipping_cost: number
+          shipping_method_id: string | null
           status: string
           subtotal: number
           total: number
@@ -348,6 +349,7 @@ export type Database = {
           id?: string
           notes?: string | null
           shipping_cost?: number
+          shipping_method_id?: string | null
           status?: string
           subtotal?: number
           total?: number
@@ -363,13 +365,22 @@ export type Database = {
           id?: string
           notes?: string | null
           shipping_cost?: number
+          shipping_method_id?: string | null
           status?: string
           subtotal?: number
           total?: number
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_shipping_method_id_fkey"
+            columns: ["shipping_method_id"]
+            isOneToOne: false
+            referencedRelation: "shipping_methods"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
@@ -586,6 +597,36 @@ export type Database = {
           gallery_images?: string[] | null
           id?: string
           image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shipping_methods: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
           is_active?: boolean
           name?: string
           price?: number
