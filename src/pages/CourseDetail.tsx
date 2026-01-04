@@ -12,6 +12,7 @@ import {
   ChevronUp,
   BookOpen
 } from "lucide-react";
+import { VideoPlayer } from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -203,20 +204,16 @@ export default function CourseDetail() {
                 className="relative aspect-video bg-charcoal rounded-2xl overflow-hidden"
               >
                 {currentLesson?.video_url && isLessonAccessible(currentLesson) ? (
-                  <video
+                  <VideoPlayer
                     key={currentLesson.id}
-                    controls
-                    className="w-full h-full"
+                    videoUrl={currentLesson.video_url}
                     poster={course.image_url || undefined}
                     onEnded={() => {
                       if (currentLesson) {
                         updateProgress.mutate({ lessonId: currentLesson.id, completed: true });
                       }
                     }}
-                  >
-                    <source src={currentLesson.video_url} type="video/mp4" />
-                    مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
-                  </video>
+                  />
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
                     <img
