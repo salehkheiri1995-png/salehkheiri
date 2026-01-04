@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Star, Instagram, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 
 const specialists = [
   {
@@ -38,6 +40,19 @@ const specialists = [
 ];
 
 export function SpecialistsSection() {
+  const { data: settings } = useSalonSettings();
+  const navigate = useNavigate();
+
+  const parseTitle = (title: string) => {
+    const match = title.match(/^(.+?)\s+(\S+)\s+(\S+)$/);
+    if (match) {
+      return { main: match[1], highlight: match[2], suffix: match[3] };
+    }
+    return { main: title, highlight: "", suffix: "" };
+  };
+
+  const titleParts = parseTitle(settings?.home_specialists_title || "متخصصان حرفه‌ای ما");
+
   return (
     <section className="py-24">
       <div className="container">
@@ -50,10 +65,10 @@ export function SpecialistsSection() {
         >
           <span className="text-primary font-medium mb-4 block">تیم ما</span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            متخصصان <span className="gradient-text">حرفه‌ای</span> ما
+            {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span> {titleParts.suffix}
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            با بهترین متخصصان زیبایی آشنا شوید
+            {settings?.home_specialists_subtitle || "با بهترین متخصصان زیبایی آشنا شوید"}
           </p>
         </motion.div>
 
@@ -101,7 +116,7 @@ export function SpecialistsSection() {
                 <Button variant="outline" size="sm" className="flex-1">
                   <Instagram className="w-4 h-4" />
                 </Button>
-                <Button size="sm" className="flex-1">
+                <Button size="sm" className="flex-1" onClick={() => navigate("/booking")}>
                   رزرو نوبت
                 </Button>
               </div>

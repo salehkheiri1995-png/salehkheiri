@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 
 const products = [
   {
@@ -55,6 +56,7 @@ const products = [
 
 export function ProductsSection() {
   const { addItem, items } = useCart();
+  const { data: settings } = useSalonSettings();
 
   const handleAddToCart = (product: typeof products[0]) => {
     addItem({
@@ -70,6 +72,16 @@ export function ProductsSection() {
 
   const isInCart = (name: string) => items.some((item) => item.id === name);
 
+  const parseTitle = (title: string) => {
+    const match = title.match(/^(.+?)\s+(\S+)$/);
+    if (match) {
+      return { main: match[1], highlight: match[2] };
+    }
+    return { main: title, highlight: "" };
+  };
+
+  const titleParts = parseTitle(settings?.home_products_title || "محصولات پرفروش");
+
   return (
     <section className="py-24">
       <div className="container">
@@ -83,10 +95,10 @@ export function ProductsSection() {
           <div>
             <span className="text-primary font-medium mb-4 block">فروشگاه</span>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              محصولات <span className="gradient-text">پرفروش</span>
+              {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl">
-              بهترین محصولات زیبایی با ضمانت اصالت کالا
+              {settings?.home_products_subtitle || "بهترین محصولات زیبایی با ضمانت اصالت کالا"}
             </p>
           </div>
           <Button asChild variant="outline" className="gap-2 shrink-0">

@@ -5,6 +5,7 @@ import { Menu, X, User, ShoppingBag, Calendar, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 
 const navLinks = [
   { href: "/", label: "خانه" },
@@ -20,6 +21,7 @@ export function Header() {
   const location = useLocation();
   const { user, isAdmin } = useAuth();
   const { totalItems } = useCart();
+  const { data: settings } = useSalonSettings();
 
   return (
     <header className="fixed top-0 right-0 left-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
@@ -30,7 +32,7 @@ export function Header() {
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">سالن زیبایی</span>
+            <span className="text-xl font-bold text-foreground">{settings?.salon_name || "سالن زیبایی"}</span>
           </Link>
 
           {/* Desktop Navigation */}

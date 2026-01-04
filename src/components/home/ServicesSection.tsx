@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, Scissors, Sparkles, Heart, Sun, Crown, Paintbrush } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 
 const services = [
   {
@@ -49,6 +50,19 @@ const services = [
 ];
 
 export function ServicesSection() {
+  const { data: settings } = useSalonSettings();
+  const navigate = useNavigate();
+
+  const parseTitle = (title: string) => {
+    const match = title.match(/^(.+?)\s+(\S+)$/);
+    if (match) {
+      return { main: match[1], highlight: match[2] };
+    }
+    return { main: title, highlight: "" };
+  };
+
+  const titleParts = parseTitle(settings?.home_services_title || "خدمات زیبایی حرفه‌ای");
+
   return (
     <section className="py-24 bg-muted/30">
       <div className="container">
@@ -61,10 +75,10 @@ export function ServicesSection() {
         >
           <span className="text-primary font-medium mb-4 block">خدمات ما</span>
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            خدمات زیبایی <span className="gradient-text">حرفه‌ای</span>
+            {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            با تیم متخصص ما، بهترین خدمات زیبایی را تجربه کنید
+            {settings?.home_services_subtitle || "با تیم متخصص ما، بهترین خدمات زیبایی را تجربه کنید"}
           </p>
         </motion.div>
 
@@ -98,7 +112,11 @@ export function ServicesSection() {
                   <h3 className="text-lg font-bold">{service.title}</h3>
                 </div>
                 <p className="text-muted-foreground text-sm mb-4">{service.description}</p>
-                <Button variant="ghost" className="gap-2 p-0 h-auto text-primary hover:text-primary/80">
+                <Button 
+                  variant="ghost" 
+                  className="gap-2 p-0 h-auto text-primary hover:text-primary/80"
+                  onClick={() => navigate("/booking")}
+                >
                   رزرو نوبت
                   <ArrowLeft className="w-4 h-4" />
                 </Button>

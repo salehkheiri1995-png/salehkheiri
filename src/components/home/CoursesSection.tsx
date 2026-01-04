@@ -3,6 +3,7 @@ import { ArrowLeft, Clock, Users, Star, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 
 const courses = [
   {
@@ -44,6 +45,18 @@ const courses = [
 ];
 
 export function CoursesSection() {
+  const { data: settings } = useSalonSettings();
+
+  const parseTitle = (title: string) => {
+    const match = title.match(/^(.+?)\s+(\S+)\s+(.+)$/);
+    if (match) {
+      return { main: match[1], highlight: match[2], suffix: match[3] };
+    }
+    return { main: title, highlight: "", suffix: "" };
+  };
+
+  const titleParts = parseTitle(settings?.home_courses_title || "آموزش حرفه‌ای زیبایی");
+
   return (
     <section className="py-24 bg-muted/30">
       <div className="container">
@@ -57,10 +70,10 @@ export function CoursesSection() {
           <div>
             <span className="text-primary font-medium mb-4 block">دوره‌های آموزشی</span>
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              آموزش <span className="gradient-text">حرفه‌ای</span> زیبایی
+              {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span> {titleParts.suffix}
             </h2>
             <p className="text-muted-foreground max-w-2xl">
-              با دوره‌های تخصصی ما، مهارت‌های زیبایی خود را ارتقا دهید
+              {settings?.home_courses_subtitle || "با دوره‌های تخصصی ما، مهارت‌های زیبایی خود را ارتقا دهید"}
             </p>
           </div>
           <Button asChild variant="outline" className="gap-2 shrink-0">
