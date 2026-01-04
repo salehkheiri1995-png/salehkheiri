@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, User, ShoppingBag, Calendar, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 
 const navLinks = [
   { href: "/", label: "خانه" },
@@ -18,6 +19,7 @@ export function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { user, isAdmin } = useAuth();
+  const { totalItems } = useCart();
 
   return (
     <header className="fixed top-0 right-0 left-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
@@ -50,9 +52,14 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-              <Link to="/shop">
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+              <Link to="/cart">
                 <ShoppingBag className="w-5 h-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -top-1 -left-1 w-5 h-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center font-medium">
+                    {totalItems}
+                  </span>
+                )}
               </Link>
             </Button>
             {user ? (
