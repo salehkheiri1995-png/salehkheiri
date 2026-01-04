@@ -11,7 +11,9 @@ import NotFound from "./pages/NotFound";
 import Services from "./pages/Services";
 import Courses from "./pages/Courses";
 import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
 import Specialists from "./pages/Specialists";
 import Booking from "./pages/Booking";
 import Dashboard from "./pages/Dashboard";
@@ -43,7 +45,9 @@ const App = () => (
               <Route path="/courses" element={<Courses />} />
               <Route path="/courses/:id" element={<CourseDetail />} />
               <Route path="/shop" element={<Shop />} />
+              <Route path="/shop/:id" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
               <Route path="/specialists" element={<Specialists />} />
               <Route path="/booking" element={<Booking />} />
               <Route path="/dashboard" element={<Dashboard />} />
