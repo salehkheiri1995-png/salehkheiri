@@ -359,6 +359,20 @@ export type Database = {
           address: string | null
           created_at: string
           email: string | null
+          hero_badge_text: string | null
+          hero_description: string | null
+          hero_highlight: string | null
+          hero_title: string | null
+          home_booking_subtitle: string | null
+          home_booking_title: string | null
+          home_courses_subtitle: string | null
+          home_courses_title: string | null
+          home_products_subtitle: string | null
+          home_products_title: string | null
+          home_services_subtitle: string | null
+          home_services_title: string | null
+          home_specialists_subtitle: string | null
+          home_specialists_title: string | null
           id: string
           instagram_url: string | null
           logo_url: string | null
@@ -374,6 +388,20 @@ export type Database = {
           address?: string | null
           created_at?: string
           email?: string | null
+          hero_badge_text?: string | null
+          hero_description?: string | null
+          hero_highlight?: string | null
+          hero_title?: string | null
+          home_booking_subtitle?: string | null
+          home_booking_title?: string | null
+          home_courses_subtitle?: string | null
+          home_courses_title?: string | null
+          home_products_subtitle?: string | null
+          home_products_title?: string | null
+          home_services_subtitle?: string | null
+          home_services_title?: string | null
+          home_specialists_subtitle?: string | null
+          home_specialists_title?: string | null
           id?: string
           instagram_url?: string | null
           logo_url?: string | null
@@ -389,6 +417,20 @@ export type Database = {
           address?: string | null
           created_at?: string
           email?: string | null
+          hero_badge_text?: string | null
+          hero_description?: string | null
+          hero_highlight?: string | null
+          hero_title?: string | null
+          home_booking_subtitle?: string | null
+          home_booking_title?: string | null
+          home_courses_subtitle?: string | null
+          home_courses_title?: string | null
+          home_products_subtitle?: string | null
+          home_products_title?: string | null
+          home_services_subtitle?: string | null
+          home_services_title?: string | null
+          home_specialists_subtitle?: string | null
+          home_specialists_title?: string | null
           id?: string
           instagram_url?: string | null
           logo_url?: string | null
