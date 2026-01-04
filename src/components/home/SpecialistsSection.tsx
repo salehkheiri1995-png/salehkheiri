@@ -70,7 +70,8 @@ export function SpecialistsSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="group bg-card rounded-2xl p-6 text-center shadow-card hover-lift"
+                className="group bg-card rounded-2xl p-6 text-center shadow-card hover-lift cursor-pointer"
+                onClick={() => navigate(`/specialists/${specialist.id}`)}
               >
                 {/* Avatar */}
                 <div className="relative w-28 h-28 mx-auto mb-4">
@@ -103,13 +104,13 @@ export function SpecialistsSection() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   {specialist.instagram_url && (
-                    <Button variant="outline" size="sm" className="flex-1" asChild>
+                    <Button variant="outline" size="sm" className="flex-1" asChild onClick={(e) => e.stopPropagation()}>
                       <a href={specialist.instagram_url} target="_blank" rel="noopener noreferrer">
                         <Instagram className="w-4 h-4" />
                       </a>
                     </Button>
                   )}
-                  <Button size="sm" className="flex-1" onClick={() => navigate(`/booking?specialist=${specialist.id}`)}>
+                  <Button size="sm" className="flex-1" onClick={(e) => { e.stopPropagation(); navigate(`/booking?specialist=${specialist.id}`); }}>
                     رزرو نوبت
                   </Button>
                 </div>

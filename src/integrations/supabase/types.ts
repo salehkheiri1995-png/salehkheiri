@@ -461,6 +461,7 @@ export type Database = {
           address: string | null
           created_at: string
           email: string | null
+          free_shipping_threshold: number | null
           hero_badge_text: string | null
           hero_description: string | null
           hero_highlight: string | null
@@ -480,6 +481,7 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           salon_name: string
+          shipping_cost: number | null
           telegram_url: string | null
           updated_at: string
           whatsapp: string | null
@@ -490,6 +492,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           email?: string | null
+          free_shipping_threshold?: number | null
           hero_badge_text?: string | null
           hero_description?: string | null
           hero_highlight?: string | null
@@ -509,6 +512,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           salon_name?: string
+          shipping_cost?: number | null
           telegram_url?: string | null
           updated_at?: string
           whatsapp?: string | null
@@ -519,6 +523,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           email?: string | null
+          free_shipping_threshold?: number | null
           hero_badge_text?: string | null
           hero_description?: string | null
           hero_highlight?: string | null
@@ -538,6 +543,7 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           salon_name?: string
+          shipping_cost?: number | null
           telegram_url?: string | null
           updated_at?: string
           whatsapp?: string | null

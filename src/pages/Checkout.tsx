@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CheckCircle, Loader2, Package } from "lucide-react";
@@ -17,6 +18,7 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
+  const { data: settings } = useSalonSettings();
   const [loading, setLoading] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -33,7 +35,9 @@ export default function Checkout() {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
 
-  const shippingCost = totalPrice > 500000 ? 0 : 50000;
+  const shippingCostAmount = settings?.shipping_cost ? Number(settings.shipping_cost) : 50000;
+  const freeShippingThreshold = settings?.free_shipping_threshold ? Number(settings.free_shipping_threshold) : 500000;
+  const shippingCost = totalPrice >= freeShippingThreshold ? 0 : shippingCostAmount;
   const finalTotal = totalPrice + shippingCost;
 
   const handleSubmit = async (e: React.FormEvent) => {

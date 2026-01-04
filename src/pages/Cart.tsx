@@ -4,16 +4,20 @@ import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useCart } from "@/hooks/useCart";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { Link } from "react-router-dom";
 
 export default function Cart() {
   const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
+  const { data: settings } = useSalonSettings();
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
 
-  const shippingCost = totalPrice > 500000 ? 0 : 50000;
+  const shippingCostAmount = settings?.shipping_cost ? Number(settings.shipping_cost) : 50000;
+  const freeShippingThreshold = settings?.free_shipping_threshold ? Number(settings.free_shipping_threshold) : 500000;
+  const shippingCost = totalPrice >= freeShippingThreshold ? 0 : shippingCostAmount;
   const finalTotal = totalPrice + shippingCost;
 
   return (
@@ -141,7 +145,7 @@ export default function Cart() {
 
                     {shippingCost > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        برای ارسال رایگان {formatPrice(500000 - totalPrice)} تومان دیگر خرید کنید
+                        برای ارسال رایگان {formatPrice(freeShippingThreshold - totalPrice)} تومان دیگر خرید کنید
                       </p>
                     )}
 

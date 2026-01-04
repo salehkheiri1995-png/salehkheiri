@@ -15,6 +15,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Specialists from "./pages/Specialists";
+import SpecialistDetail from "./pages/SpecialistDetail";
 import Booking from "./pages/Booking";
 import Dashboard from "./pages/Dashboard";
 import { AdminLayout } from "./components/admin/AdminLayout";
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/specialists" element={<Specialists />} />
+              <Route path="/specialists/:id" element={<SpecialistDetail />} />
               <Route path="/booking" element={<Booking />} />
               <Route path="/dashboard" element={<Dashboard />} />
             
