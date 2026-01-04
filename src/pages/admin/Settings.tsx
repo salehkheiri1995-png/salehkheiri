@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Save, Loader2, Building2, Phone, Instagram, FileText, Home, Truck } from "lucide-react";
+import { Save, Loader2, Building2, Phone, Instagram, FileText, Home, Truck, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
+import ThemeSettingsTab from "@/components/admin/ThemeSettingsTab";
 
 interface SalonSettings {
   id: string;
@@ -175,7 +176,7 @@ export default function AdminSettings() {
 
       <form onSubmit={handleSubmit}>
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="general" className="gap-2">
               <Building2 className="w-4 h-4" />
               اطلاعات سالن
@@ -191,6 +192,10 @@ export default function AdminSettings() {
             <TabsTrigger value="content" className="gap-2">
               <Home className="w-4 h-4" />
               صفحه خانه
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="gap-2">
+              <Palette className="w-4 h-4" />
+              ظاهر سایت
             </TabsTrigger>
           </TabsList>
 
@@ -597,6 +602,11 @@ export default function AdminSettings() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Appearance Tab */}
+        <TabsContent value="appearance">
+          <ThemeSettingsTab />
+        </TabsContent>
 
         {/* Save Button */}
         <motion.div
