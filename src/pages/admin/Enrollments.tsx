@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Search, User, BookOpen, Percent } from "lucide-react";
+import { GraduationCap, Search, User, BookOpen, FileSpreadsheet } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -16,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { faIR } from "date-fns/locale";
+import { exportToExcel, formatEnrollmentsForExport } from "@/lib/excelExport";
+import { SendNotificationDialog } from "@/components/admin/SendNotificationDialog";
 
 interface Enrollment {
   id: string;
@@ -108,6 +111,11 @@ export default function AdminEnrollments() {
     return acc;
   }, {} as Record<string, { title: string; count: number; revenue: number }>);
 
+  const handleExport = () => {
+    const exportData = formatEnrollmentsForExport(filteredEnrollments);
+    exportToExcel(exportData, `ثبت‌نام‌ها-${new Date().toLocaleDateString('fa-IR')}`, 'ثبت‌نام‌ها');
+  };
+
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -119,6 +127,13 @@ export default function AdminEnrollments() {
           <p className="text-muted-foreground mt-1">
             {enrollments.length} ثبت‌نام
           </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} className="gap-2">
+            <FileSpreadsheet className="w-4 h-4" />
+            خروجی Excel
+          </Button>
+          <SendNotificationDialog />
         </div>
       </div>
 

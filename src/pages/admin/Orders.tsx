@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Loader2, Check, X, Clock, Eye, Package, Truck } from "lucide-react";
+import { Search, Loader2, Check, X, Clock, Eye, Package, Truck, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { exportToExcel, formatOrdersForExport } from "@/lib/excelExport";
+import { SendNotificationDialog } from "@/components/admin/SendNotificationDialog";
 
 interface OrderItem {
   id: string;
@@ -122,11 +124,25 @@ export default function AdminOrders() {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
 
+  const handleExport = () => {
+    const exportData = formatOrdersForExport(filteredOrders);
+    exportToExcel(exportData, `سفارشات-${new Date().toLocaleDateString('fa-IR')}`, 'سفارشات');
+  };
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground">مدیریت سفارشات</h1>
-        <p className="text-muted-foreground mt-1">{orders.length} سفارش</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">مدیریت سفارشات</h1>
+          <p className="text-muted-foreground mt-1">{orders.length} سفارش</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleExport} className="gap-2">
+            <FileSpreadsheet className="w-4 h-4" />
+            خروجی Excel
+          </Button>
+          <SendNotificationDialog />
+        </div>
       </div>
 
       <div className="relative mb-6">
