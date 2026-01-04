@@ -1,1 +1,4 @@
 project_id = "mipyvlkrwvvnpnnjsoph"
+
+[functions.create-user]
+verify_jwt = false

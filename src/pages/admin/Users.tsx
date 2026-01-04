@@ -3,13 +3,13 @@ import { motion } from "framer-motion";
 import { 
   Users, 
   Search, 
-  Eye, 
   ShoppingCart, 
   Calendar, 
   GraduationCap,
   ChevronDown,
   ChevronUp,
-  Package
+  UserPlus,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,20 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -77,11 +91,28 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "انجام شده",
 };
 
+interface AddUserForm {
+  email: string;
+  password: string;
+  full_name: string;
+  phone: string;
+  role: 'user' | 'admin' | 'moderator';
+}
+
 export default function AdminUsers() {
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [addingUser, setAddingUser] = useState(false);
+  const [formData, setFormData] = useState<AddUserForm>({
+    email: '',
+    password: '',
+    full_name: '',
+    phone: '',
+    role: 'user'
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -148,6 +179,57 @@ export default function AdminUsers() {
       u.phone?.includes(search)
   );
 
+  const handleAddUser = async () => {
+    if (!formData.email || !formData.password) {
+      toast.error('ایمیل و رمز عبور الزامی است');
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      toast.error('رمز عبور باید حداقل ۶ کاراکتر باشد');
+      return;
+    }
+
+    setAddingUser(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('create-user', {
+        body: {
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.full_name || null,
+          phone: formData.phone || null,
+          role: formData.role
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'خطا در ایجاد کاربر');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      toast.success('کاربر با موفقیت ایجاد شد');
+      setAddDialogOpen(false);
+      setFormData({
+        email: '',
+        password: '',
+        full_name: '',
+        phone: '',
+        role: 'user'
+      });
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error creating user:', error);
+      toast.error(error.message || 'خطا در ایجاد کاربر');
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -160,6 +242,88 @@ export default function AdminUsers() {
             {users.length} کاربر ثبت‌نام شده
           </p>
         </div>
+        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <UserPlus className="w-4 h-4" />
+              افزودن کاربر
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>افزودن کاربر جدید</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 mt-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">ایمیل *</label>
+                <Input
+                  type="email"
+                  placeholder="email@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">رمز عبور *</label>
+                <Input
+                  type="password"
+                  placeholder="حداقل ۶ کاراکتر"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">نام کامل</label>
+                <Input
+                  placeholder="نام و نام خانوادگی"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">شماره تماس</label>
+                <Input
+                  placeholder="09123456789"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">نقش</label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value: 'user' | 'admin' | 'moderator') => 
+                    setFormData({ ...formData, role: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">کاربر عادی</SelectItem>
+                    <SelectItem value="moderator">مدیر محتوا</SelectItem>
+                    <SelectItem value="admin">ادمین</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button 
+                onClick={handleAddUser} 
+                disabled={addingUser}
+                className="w-full gap-2"
+              >
+                {addingUser ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <UserPlus className="w-4 h-4" />
+                )}
+                ایجاد کاربر
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="relative mb-6">
