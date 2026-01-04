@@ -2,3 +2,9 @@ project_id = "mipyvlkrwvvnpnnjsoph"
 
 [functions.create-user]
 verify_jwt = false
+
+[functions.manage-user]
+verify_jwt = false
+
+[functions.create-user]
+verify_jwt = false
