@@ -276,20 +276,20 @@ export default function Checkout() {
                 {/* Shipping Methods */}
                 <div className="bg-card rounded-2xl p-6 shadow-card">
                   <h2 className="font-bold text-lg mb-4">روش ارسال</h2>
-                  {shippingMethods.length > 0 ? (
+                {shippingMethods.length > 0 ? (
                     <RadioGroup value={selectedShippingId} onValueChange={setSelectedShippingId}>
                       <div className="space-y-3">
                         {shippingMethods.map((method) => (
-                          <div
+                          <label
                             key={method.id}
+                            htmlFor={`shipping-${method.id}`}
                             className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
                               selectedShippingId === method.id
                                 ? "border-primary bg-primary/5"
                                 : "border-border hover:border-primary/50"
                             }`}
-                            onClick={() => setSelectedShippingId(method.id)}
                           >
-                            <RadioGroupItem value={method.id} id={method.id} />
+                            <RadioGroupItem value={method.id} id={`shipping-${method.id}`} />
                             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
                               <Truck className="w-5 h-5 text-muted-foreground" />
                             </div>
@@ -302,7 +302,7 @@ export default function Checkout() {
                             <p className="font-bold text-primary">
                               {method.price === 0 ? "رایگان" : `${formatPrice(method.price)} تومان`}
                             </p>
-                          </div>
+                          </label>
                         ))}
                       </div>
                     </RadioGroup>
