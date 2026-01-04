@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 interface Course {
   id: string;
@@ -184,6 +185,14 @@ export default function AdminCourses() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label>تصویر دوره</Label>
+                <ImageUpload
+                  value={formData.image_url}
+                  onChange={(url) => setFormData({ ...formData, image_url: url })}
+                  folder="courses"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label>عنوان دوره</Label>
                 <Input
                   value={formData.title}
@@ -258,14 +267,6 @@ export default function AdminCourses() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>آدرس تصویر</Label>
-                <Input
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  dir="ltr"
-                />
               </div>
               <div className="flex items-center gap-8">
                 <div className="flex items-center gap-2">

@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 interface Service {
   id: string;
@@ -182,13 +183,21 @@ export default function AdminServices() {
               افزودن خدمت
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingService ? "ویرایش خدمت" : "افزودن خدمت جدید"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>تصویر</Label>
+                <ImageUpload
+                  value={formData.image_url}
+                  onChange={(url) => setFormData({ ...formData, image_url: url })}
+                  folder="services"
+                />
+              </div>
               <div className="space-y-2">
                 <Label>نام خدمت</Label>
                 <Input
@@ -242,16 +251,6 @@ export default function AdminServices() {
                   onChange={(e) =>
                     setFormData({ ...formData, category: e.target.value })
                   }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>آدرس تصویر</Label>
-                <Input
-                  value={formData.image_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, image_url: e.target.value })
-                  }
-                  dir="ltr"
                 />
               </div>
               <div className="flex items-center justify-between">

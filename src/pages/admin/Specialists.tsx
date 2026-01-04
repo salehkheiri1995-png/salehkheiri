@@ -15,6 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { ImageUpload } from "@/components/admin/ImageUpload";
 
 interface Specialist {
   id: string;
@@ -153,13 +154,21 @@ export default function AdminSpecialists() {
               افزودن متخصص
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingSpecialist ? "ویرایش متخصص" : "افزودن متخصص جدید"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>تصویر</Label>
+                <ImageUpload
+                  value={formData.avatar_url}
+                  onChange={(url) => setFormData({ ...formData, avatar_url: url })}
+                  folder="specialists"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>نام کامل</Label>
@@ -202,14 +211,6 @@ export default function AdminSpecialists() {
                     dir="ltr"
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label>آدرس تصویر</Label>
-                <Input
-                  value={formData.avatar_url}
-                  onChange={(e) => setFormData({ ...formData, avatar_url: e.target.value })}
-                  dir="ltr"
-                />
               </div>
               <div className="flex items-center gap-2">
                 <Switch
