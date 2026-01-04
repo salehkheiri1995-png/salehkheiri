@@ -27,6 +27,8 @@ export interface SalonSettings {
   home_products_subtitle: string | null;
   home_booking_title: string | null;
   home_booking_subtitle: string | null;
+  shipping_cost: number | null;
+  free_shipping_threshold: number | null;
 }
 
 export function useSalonSettings() {

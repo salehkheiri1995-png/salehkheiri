@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Save, Loader2, Building2, Phone, Instagram, FileText, Home } from "lucide-react";
+import { Save, Loader2, Building2, Phone, Instagram, FileText, Home, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,6 +38,8 @@ interface SalonSettings {
   home_products_subtitle: string | null;
   home_booking_title: string | null;
   home_booking_subtitle: string | null;
+  shipping_cost: number | null;
+  free_shipping_threshold: number | null;
 }
 
 export default function AdminSettings() {
@@ -92,6 +94,8 @@ export default function AdminSettings() {
           home_products_subtitle: formData.home_products_subtitle,
           home_booking_title: formData.home_booking_title,
           home_booking_subtitle: formData.home_booking_subtitle,
+          shipping_cost: formData.shipping_cost,
+          free_shipping_threshold: formData.free_shipping_threshold,
         });
         if (error) throw error;
       } else {
@@ -122,6 +126,8 @@ export default function AdminSettings() {
             home_products_subtitle: formData.home_products_subtitle,
             home_booking_title: formData.home_booking_title,
             home_booking_subtitle: formData.home_booking_subtitle,
+            shipping_cost: formData.shipping_cost,
+            free_shipping_threshold: formData.free_shipping_threshold,
           })
           .eq("id", settings.id);
         if (error) throw error;
@@ -169,18 +175,22 @@ export default function AdminSettings() {
 
       <form onSubmit={handleSubmit}>
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="general" className="gap-2">
               <Building2 className="w-4 h-4" />
               اطلاعات سالن
             </TabsTrigger>
             <TabsTrigger value="contact" className="gap-2">
               <Phone className="w-4 h-4" />
-              تماس و شبکه‌های اجتماعی
+              تماس
+            </TabsTrigger>
+            <TabsTrigger value="shipping" className="gap-2">
+              <Truck className="w-4 h-4" />
+              ارسال
             </TabsTrigger>
             <TabsTrigger value="content" className="gap-2">
               <Home className="w-4 h-4" />
-              متن‌های صفحه خانه
+              صفحه خانه
             </TabsTrigger>
           </TabsList>
 
@@ -343,6 +353,50 @@ export default function AdminSettings() {
                 </Card>
               </motion.div>
             </div>
+          </TabsContent>
+
+          {/* Shipping Tab */}
+          <TabsContent value="shipping">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="w-5 h-5" />
+                    تنظیمات ارسال
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="shipping_cost">هزینه ارسال (تومان)</Label>
+                    <Input
+                      id="shipping_cost"
+                      type="number"
+                      value={formData.shipping_cost || 50000}
+                      onChange={(e) => setFormData({ ...formData, shipping_cost: Number(e.target.value) })}
+                      placeholder="50000"
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      هزینه‌ای که برای ارسال سفارشات کمتر از حد ارسال رایگان محاسبه می‌شود
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="free_shipping_threshold">حداقل خرید برای ارسال رایگان (تومان)</Label>
+                    <Input
+                      id="free_shipping_threshold"
+                      type="number"
+                      value={formData.free_shipping_threshold || 500000}
+                      onChange={(e) => setFormData({ ...formData, free_shipping_threshold: Number(e.target.value) })}
+                      placeholder="500000"
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      سفارشات بیشتر از این مبلغ ارسال رایگان دارند
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </TabsContent>
 
           {/* Content Tab */}
