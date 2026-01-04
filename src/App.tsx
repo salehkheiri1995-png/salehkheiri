@@ -12,6 +12,7 @@ import Courses from "./pages/Courses";
 import Shop from "./pages/Shop";
 import Specialists from "./pages/Specialists";
 import Booking from "./pages/Booking";
+import Dashboard from "./pages/Dashboard";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminServices from "./pages/admin/Services";
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/shop" element={<Shop />} />
             <Route path="/specialists" element={<Specialists />} />
             <Route path="/booking" element={<Booking />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLayout />}>

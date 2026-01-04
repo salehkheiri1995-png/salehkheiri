@@ -63,7 +63,7 @@ export function Header() {
                   </Button>
                 )}
                 <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                  <Link to="/auth">
+                  <Link to="/dashboard">
                     <User className="w-5 h-5" />
                   </Link>
                 </Button>
@@ -126,9 +126,9 @@ export function Header() {
               )}
               <div className="flex gap-2 pt-4 border-t border-border mt-2">
                 <Button asChild variant="outline" className="flex-1 gap-2">
-                  <Link to="/auth" onClick={() => setIsOpen(false)}>
+                  <Link to={user ? "/dashboard" : "/auth"} onClick={() => setIsOpen(false)}>
                     <User className="w-4 h-4" />
-                    {user ? "پروفایل" : "ورود"}
+                    {user ? "پنل کاربری" : "ورود"}
                   </Link>
                 </Button>
                 <Button asChild variant="default" className="flex-1 gap-2">

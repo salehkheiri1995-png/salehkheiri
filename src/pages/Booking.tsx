@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Calendar, Clock, User, Sparkles, ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useSearchParams } from "react-router-dom";
 
 const timeSlots = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -32,6 +33,7 @@ export default function Booking() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -72,6 +74,35 @@ export default function Booking() {
       return data;
     },
   });
+
+  // Pre-select service or specialist from URL params
+  useEffect(() => {
+    const serviceParam = searchParams.get("service");
+    
+    if (serviceParam && services) {
+      const serviceExists = services.some(s => s.id === serviceParam);
+      if (serviceExists) {
+        setSelectedService(serviceParam);
+        setCurrentStep(2); // Go to specialist selection
+      }
+    }
+  }, [searchParams, services]);
+
+  useEffect(() => {
+    const specialistParam = searchParams.get("specialist");
+    
+    if (specialistParam && specialists) {
+      const specialistExists = specialists.some(s => s.id === specialistParam);
+      if (specialistExists) {
+        setSelectedSpecialist(specialistParam);
+        if (!selectedService && services?.length) {
+          // If no service selected, stay at step 1
+        } else if (selectedService) {
+          setCurrentStep(3); // Go to date/time selection
+        }
+      }
+    }
+  }, [searchParams, specialists, selectedService, services]);
 
   // Create booking mutation
   const createBooking = useMutation({
