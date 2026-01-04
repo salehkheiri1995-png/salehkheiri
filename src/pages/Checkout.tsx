@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
@@ -7,21 +7,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
-import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CheckCircle, Loader2, Package } from "lucide-react";
+import { CheckCircle, Loader2, Package, Truck } from "lucide-react";
+
+interface ShippingMethod {
+  id: string;
+  name: string;
+  price: number;
+  description: string | null;
+}
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
-  const { data: settings } = useSalonSettings();
   const [loading, setLoading] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [selectedShippingId, setSelectedShippingId] = useState<string>("");
 
   const [formData, setFormData] = useState({
     customer_name: "",
@@ -31,14 +39,30 @@ export default function Checkout() {
     notes: "",
   });
 
+  useEffect(() => {
+    fetchShippingMethods();
+  }, []);
+
+  const fetchShippingMethods = async () => {
+    const { data } = await supabase
+      .from("shipping_methods")
+      .select("*")
+      .eq("is_active", true)
+      .order("price", { ascending: true });
+    
+    if (data && data.length > 0) {
+      setShippingMethods(data);
+      setSelectedShippingId(data[0].id);
+    }
+  };
+
+  const selectedShipping = shippingMethods.find(m => m.id === selectedShippingId);
+  const shippingCost = selectedShipping?.price || 0;
+  const finalTotal = totalPrice + shippingCost;
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
-
-  const shippingCostAmount = settings?.shipping_cost ? Number(settings.shipping_cost) : 50000;
-  const freeShippingThreshold = settings?.free_shipping_threshold ? Number(settings.free_shipping_threshold) : 500000;
-  const shippingCost = totalPrice >= freeShippingThreshold ? 0 : shippingCostAmount;
-  const finalTotal = totalPrice + shippingCost;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +74,11 @@ export default function Checkout() {
 
     if (!formData.customer_name || !formData.customer_phone || !formData.address) {
       toast.error("لطفاً فیلدهای ضروری را پر کنید");
+      return;
+    }
+
+    if (!selectedShippingId) {
+      toast.error("لطفاً روش ارسال را انتخاب کنید");
       return;
     }
 
@@ -68,6 +97,7 @@ export default function Checkout() {
           notes: formData.notes || null,
           subtotal: totalPrice,
           shipping_cost: shippingCost,
+          shipping_method_id: selectedShippingId,
           total: finalTotal,
           status: "pending",
         })
@@ -179,65 +209,106 @@ export default function Checkout() {
               transition={{ delay: 0.1 }}
               className="lg:col-span-2"
             >
-              <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 shadow-card space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="customer_name">نام و نام خانوادگی *</Label>
-                    <Input
-                      id="customer_name"
-                      value={formData.customer_name}
-                      onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
-                      placeholder="علی احمدی"
-                      required
-                    />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="bg-card rounded-2xl p-6 shadow-card space-y-6">
+                  <h2 className="font-bold text-lg">اطلاعات گیرنده</h2>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="customer_name">نام و نام خانوادگی *</Label>
+                      <Input
+                        id="customer_name"
+                        value={formData.customer_name}
+                        onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                        placeholder="علی احمدی"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="customer_phone">شماره تماس *</Label>
+                      <Input
+                        id="customer_phone"
+                        value={formData.customer_phone}
+                        onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                        placeholder="09123456789"
+                        required
+                        dir="ltr"
+                      />
+                    </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="customer_phone">شماره تماس *</Label>
+                    <Label htmlFor="customer_email">ایمیل (اختیاری)</Label>
                     <Input
-                      id="customer_phone"
-                      value={formData.customer_phone}
-                      onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
-                      placeholder="09123456789"
-                      required
+                      id="customer_email"
+                      type="email"
+                      value={formData.customer_email}
+                      onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
+                      placeholder="example@email.com"
                       dir="ltr"
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">آدرس کامل *</Label>
+                    <Textarea
+                      id="address"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      placeholder="استان، شهر، خیابان، پلاک، واحد"
+                      rows={3}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">توضیحات (اختیاری)</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="توضیحات اضافی برای سفارش..."
+                      rows={2}
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="customer_email">ایمیل (اختیاری)</Label>
-                  <Input
-                    id="customer_email"
-                    type="email"
-                    value={formData.customer_email}
-                    onChange={(e) => setFormData({ ...formData, customer_email: e.target.value })}
-                    placeholder="example@email.com"
-                    dir="ltr"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">آدرس کامل *</Label>
-                  <Textarea
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    placeholder="استان، شهر، خیابان، پلاک، واحد"
-                    rows={3}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">توضیحات (اختیاری)</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="توضیحات اضافی برای سفارش..."
-                    rows={2}
-                  />
+                {/* Shipping Methods */}
+                <div className="bg-card rounded-2xl p-6 shadow-card">
+                  <h2 className="font-bold text-lg mb-4">روش ارسال</h2>
+                  {shippingMethods.length > 0 ? (
+                    <RadioGroup value={selectedShippingId} onValueChange={setSelectedShippingId}>
+                      <div className="space-y-3">
+                        {shippingMethods.map((method) => (
+                          <div
+                            key={method.id}
+                            className={`flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                              selectedShippingId === method.id
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            }`}
+                            onClick={() => setSelectedShippingId(method.id)}
+                          >
+                            <RadioGroupItem value={method.id} id={method.id} />
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                              <Truck className="w-5 h-5 text-muted-foreground" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium">{method.name}</p>
+                              {method.description && (
+                                <p className="text-sm text-muted-foreground">{method.description}</p>
+                              )}
+                            </div>
+                            <p className="font-bold text-primary">
+                              {method.price === 0 ? "رایگان" : `${formatPrice(method.price)} تومان`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </RadioGroup>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">در حال بارگذاری...</p>
+                  )}
                 </div>
 
                 <Button type="submit" size="lg" className="w-full" disabled={loading}>
@@ -290,7 +361,7 @@ export default function Checkout() {
                     <span>{formatPrice(totalPrice)} تومان</span>
                   </div>
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>هزینه ارسال</span>
+                    <span>هزینه ارسال ({selectedShipping?.name})</span>
                     <span>
                       {shippingCost === 0 ? (
                         <span className="text-green-600">رایگان</span>
