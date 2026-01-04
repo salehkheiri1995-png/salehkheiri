@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -336,6 +337,11 @@ export default function AdminCourses() {
                     )}
                   </div>
                   <div className="flex gap-1">
+                    <Button asChild variant="ghost" size="icon" title="مدیریت دروس">
+                      <Link to={`/admin/courses/${course.id}/lessons`}>
+                        <BookOpen className="w-4 h-4" />
+                      </Link>
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(course)}>
                       <Pencil className="w-4 h-4" />
                     </Button>

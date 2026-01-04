@@ -19,8 +19,10 @@ import AdminServices from "./pages/admin/Services";
 import AdminProducts from "./pages/admin/Products";
 import AdminSpecialists from "./pages/admin/Specialists";
 import AdminCourses from "./pages/admin/Courses";
+import AdminLessons from "./pages/admin/Lessons";
 import AdminBookings from "./pages/admin/Bookings";
 import AdminSettings from "./pages/admin/Settings";
+import CourseDetail from "./pages/CourseDetail";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/services" element={<Services />} />
             <Route path="/courses" element={<Courses />} />
+            <Route path="/courses/:id" element={<CourseDetail />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/specialists" element={<Specialists />} />
             <Route path="/booking" element={<Booking />} />
@@ -48,6 +51,7 @@ const App = () => (
               <Route path="products" element={<AdminProducts />} />
               <Route path="specialists" element={<AdminSpecialists />} />
               <Route path="courses" element={<AdminCourses />} />
+              <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
               <Route path="bookings" element={<AdminBookings />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
