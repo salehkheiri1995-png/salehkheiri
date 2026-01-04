@@ -112,10 +112,10 @@ export function ServicesSection() {
                   <h3 className="text-lg font-bold">{service.title}</h3>
                 </div>
                 <p className="text-muted-foreground text-sm mb-4">{service.description}</p>
-                <Button 
+              <Button 
                   variant="ghost" 
                   className="gap-2 p-0 h-auto text-primary hover:text-primary/80"
-                  onClick={() => navigate("/booking")}
+                  onClick={() => navigate(`/booking?serviceName=${encodeURIComponent(service.title)}`)}
                 >
                   رزرو نوبت
                   <ArrowLeft className="w-4 h-4" />

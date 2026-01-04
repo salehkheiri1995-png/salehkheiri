@@ -77,32 +77,46 @@ export default function Booking() {
 
   // Pre-select service or specialist from URL params
   useEffect(() => {
-    const serviceParam = searchParams.get("service");
+    const serviceIdParam = searchParams.get("service");
+    const serviceNameParam = searchParams.get("serviceName");
     
-    if (serviceParam && services) {
-      const serviceExists = services.some(s => s.id === serviceParam);
-      if (serviceExists) {
-        setSelectedService(serviceParam);
+    if (services) {
+      let matchedService = null;
+      
+      if (serviceIdParam) {
+        matchedService = services.find(s => s.id === serviceIdParam);
+      } else if (serviceNameParam) {
+        matchedService = services.find(s => s.name === serviceNameParam);
+      }
+      
+      if (matchedService) {
+        setSelectedService(matchedService.id);
         setCurrentStep(2); // Go to specialist selection
       }
     }
   }, [searchParams, services]);
 
   useEffect(() => {
-    const specialistParam = searchParams.get("specialist");
+    const specialistIdParam = searchParams.get("specialist");
+    const specialistNameParam = searchParams.get("specialistName");
     
-    if (specialistParam && specialists) {
-      const specialistExists = specialists.some(s => s.id === specialistParam);
-      if (specialistExists) {
-        setSelectedSpecialist(specialistParam);
-        if (!selectedService && services?.length) {
-          // If no service selected, stay at step 1
-        } else if (selectedService) {
+    if (specialists) {
+      let matchedSpecialist = null;
+      
+      if (specialistIdParam) {
+        matchedSpecialist = specialists.find(s => s.id === specialistIdParam);
+      } else if (specialistNameParam) {
+        matchedSpecialist = specialists.find(s => s.full_name === specialistNameParam);
+      }
+      
+      if (matchedSpecialist) {
+        setSelectedSpecialist(matchedSpecialist.id);
+        if (selectedService) {
           setCurrentStep(3); // Go to date/time selection
         }
       }
     }
-  }, [searchParams, specialists, selectedService, services]);
+  }, [searchParams, specialists, selectedService]);
 
   // Create booking mutation
   const createBooking = useMutation({

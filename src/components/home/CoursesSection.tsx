@@ -151,7 +151,9 @@ export function CoursesSection() {
                       </span>
                     )}
                   </div>
-                  <Button size="sm">ثبت‌نام</Button>
+                  <Button size="sm" asChild>
+                    <Link to="/courses">ثبت‌نام</Link>
+                  </Button>
                 </div>
               </div>
             </motion.div>
