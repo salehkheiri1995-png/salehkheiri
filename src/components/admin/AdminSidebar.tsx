@@ -12,17 +12,21 @@ import {
   LogOut,
   Sparkles,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  UserCircle,
+  BookOpen
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "داشبورد", href: "/admin" },
+  { icon: UserCircle, label: "کاربران", href: "/admin/users" },
   { icon: Scissors, label: "خدمات", href: "/admin/services" },
   { icon: Users, label: "متخصصان", href: "/admin/specialists" },
   { icon: Package, label: "محصولات", href: "/admin/products" },
   { icon: GraduationCap, label: "دوره‌ها", href: "/admin/courses" },
+  { icon: BookOpen, label: "ثبت‌نام دوره‌ها", href: "/admin/enrollments" },
   { icon: Calendar, label: "رزروها", href: "/admin/bookings" },
   { icon: ShoppingCart, label: "سفارشات", href: "/admin/orders" },
   { icon: Truck, label: "روش‌های ارسال", href: "/admin/shipping" },
