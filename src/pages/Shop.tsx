@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ShoppingCart, Heart, Star, ShoppingBag } from "lucide-react";
+import { ShoppingCart, Heart, Star, ShoppingBag, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
@@ -8,8 +8,12 @@ import { Footer } from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 export default function Shop() {
+  const { addItem, items } = useCart();
+  
   const { data: products, isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
@@ -27,6 +31,20 @@ export default function Shop() {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
+
+  const handleAddToCart = (product: NonNullable<typeof products>[0]) => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      brand: product.brand,
+      price: Number(product.price),
+      image_url: product.image_url,
+      stock: product.stock,
+    });
+    toast.success(`${product.name} به سبد خرید اضافه شد`);
+  };
+
+  const isInCart = (productId: string) => items.some((item) => item.id === productId);
 
   return (
     <div className="min-h-screen bg-background">
@@ -126,11 +144,16 @@ export default function Shop() {
                       </div>
                       <Button
                         size="icon"
-                        variant="ghost"
+                        variant={isInCart(product.id) ? "default" : "ghost"}
                         className="h-9 w-9"
                         disabled={product.stock === 0}
+                        onClick={() => handleAddToCart(product)}
                       >
-                        <ShoppingCart className="w-4 h-4" />
+                        {isInCart(product.id) ? (
+                          <Check className="w-4 h-4" />
+                        ) : (
+                          <ShoppingCart className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </div>

@@ -1,8 +1,10 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, ShoppingCart, Heart, Star } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Heart, Star, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 const products = [
   {
@@ -52,6 +54,22 @@ const products = [
 ];
 
 export function ProductsSection() {
+  const { addItem, items } = useCart();
+
+  const handleAddToCart = (product: typeof products[0]) => {
+    addItem({
+      id: product.name,
+      name: product.name,
+      brand: product.brand,
+      price: parseInt(product.price.replace(/[^0-9]/g, "")),
+      image_url: product.image,
+      stock: product.inStock ? 10 : 0,
+    });
+    toast.success(`${product.name} به سبد خرید اضافه شد`);
+  };
+
+  const isInCart = (name: string) => items.some((item) => item.id === name);
+
   return (
     <section className="py-24">
       <div className="container">
@@ -143,11 +161,16 @@ export function ProductsSection() {
                   </div>
                   <Button
                     size="icon"
-                    variant="ghost"
+                    variant={isInCart(product.name) ? "default" : "ghost"}
                     className="h-9 w-9"
                     disabled={!product.inStock}
+                    onClick={() => handleAddToCart(product)}
                   >
-                    <ShoppingCart className="w-4 h-4" />
+                    {isInCart(product.name) ? (
+                      <Check className="w-4 h-4" />
+                    ) : (
+                      <ShoppingCart className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
               </div>
