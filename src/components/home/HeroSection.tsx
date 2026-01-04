@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { Calendar, Play, Star, Users, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 
 const stats = [
   { icon: Users, value: "+۵۰۰۰", label: "مشتری راضی" },
@@ -9,6 +11,8 @@ const stats = [
 ];
 
 export function HeroSection() {
+  const { data: settings } = useSalonSettings();
+
   return (
     <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
       {/* Background Elements */}
@@ -33,23 +37,25 @@ export function HeroSection() {
               className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6"
             >
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              پذیرش آنلاین فعال است
+              {settings?.hero_badge_text || "پذیرش آنلاین فعال است"}
             </motion.div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
-              زیبایی شما،
+              {settings?.hero_title || "زیبایی شما،"}
               <br />
-              <span className="gradient-text">اولویت ماست</span>
+              <span className="gradient-text">{settings?.hero_highlight || "اولویت ماست"}</span>
             </h1>
 
             <p className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed">
-              با بهترین متخصصان زیبایی، خدمات حرفه‌ای را تجربه کنید. از مراقبت پوست تا آرایش عروس، همه در یک مکان.
+              {settings?.hero_description || "با بهترین متخصصان زیبایی، خدمات حرفه‌ای را تجربه کنید. از مراقبت پوست تا آرایش عروس، همه در یک مکان."}
             </p>
 
             <div className="flex flex-wrap gap-4 mb-12">
-              <Button size="lg" className="gap-2 text-base h-14 px-8">
-                <Calendar className="w-5 h-5" />
-                رزرو نوبت
+              <Button asChild size="lg" className="gap-2 text-base h-14 px-8">
+                <Link to="/booking">
+                  <Calendar className="w-5 h-5" />
+                  رزرو نوبت
+                </Link>
               </Button>
               <Button size="lg" variant="outline" className="gap-2 text-base h-14 px-8">
                 <Play className="w-5 h-5" />
