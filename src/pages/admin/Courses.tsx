@@ -17,13 +17,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 
 interface Course {
   id: string;
   title: string;
   description: string | null;
   image_url: string | null;
+  gallery_images: string[] | null;
   price: number;
   original_price: number | null;
   duration_hours: number | null;
@@ -45,6 +46,7 @@ export default function AdminCourses() {
     title: "",
     description: "",
     image_url: "",
+    gallery_images: [] as string[],
     price: 0,
     original_price: 0,
     duration_hours: 0,
@@ -118,6 +120,7 @@ export default function AdminCourses() {
       title: course.title,
       description: course.description || "",
       image_url: course.image_url || "",
+      gallery_images: course.gallery_images || [],
       price: course.price,
       original_price: course.original_price || 0,
       duration_hours: course.duration_hours || 0,
@@ -148,6 +151,7 @@ export default function AdminCourses() {
       title: "",
       description: "",
       image_url: "",
+      gallery_images: [],
       price: 0,
       original_price: 0,
       duration_hours: 0,
@@ -185,10 +189,12 @@ export default function AdminCourses() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>تصویر دوره</Label>
-                <ImageUpload
-                  value={formData.image_url}
-                  onChange={(url) => setFormData({ ...formData, image_url: url })}
+                <Label>تصاویر دوره</Label>
+                <MultiImageUpload
+                  featuredImage={formData.image_url}
+                  galleryImages={formData.gallery_images}
+                  onFeaturedChange={(url) => setFormData({ ...formData, image_url: url })}
+                  onGalleryChange={(urls) => setFormData({ ...formData, gallery_images: urls })}
                   folder="courses"
                 />
               </div>

@@ -177,6 +177,7 @@ export type Database = {
           created_at: string
           description: string | null
           duration_hours: number | null
+          gallery_images: string[] | null
           id: string
           image_url: string | null
           instructor_name: string | null
@@ -196,6 +197,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_hours?: number | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           instructor_name?: string | null
@@ -215,6 +217,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_hours?: number | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           instructor_name?: string | null
@@ -278,6 +281,7 @@ export type Database = {
           category: string | null
           created_at: string
           description: string | null
+          gallery_images: string[] | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -295,6 +299,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -312,6 +317,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           description?: string | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -449,6 +455,7 @@ export type Database = {
           created_at: string
           description: string | null
           duration_minutes: number | null
+          gallery_images: string[] | null
           id: string
           image_url: string | null
           is_active: boolean
@@ -461,6 +468,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -473,6 +481,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           duration_minutes?: number | null
+          gallery_images?: string[] | null
           id?: string
           image_url?: string | null
           is_active?: boolean
@@ -489,6 +498,7 @@ export type Database = {
           created_at: string
           experience_years: number | null
           full_name: string
+          gallery_images: string[] | null
           id: string
           instagram_url: string | null
           is_active: boolean
@@ -503,6 +513,7 @@ export type Database = {
           created_at?: string
           experience_years?: number | null
           full_name: string
+          gallery_images?: string[] | null
           id?: string
           instagram_url?: string | null
           is_active?: boolean
@@ -517,6 +528,7 @@ export type Database = {
           created_at?: string
           experience_years?: number | null
           full_name?: string
+          gallery_images?: string[] | null
           id?: string
           instagram_url?: string | null
           is_active?: boolean
