@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useSalonSettings } from "@/hooks/useSalonSettings";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const navLinks = [
   { href: "/", label: "خانه" },
@@ -54,6 +55,7 @@ export function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
+            <NotificationBell />
             <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
               <Link to="/cart">
                 <ShoppingBag className="w-5 h-5" />

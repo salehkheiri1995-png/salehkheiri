@@ -11,7 +11,8 @@ import {
   Settings,
   LogOut,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  MessageSquare
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ const menuItems = [
   { icon: Calendar, label: "رزروها", href: "/admin/bookings" },
   { icon: ShoppingCart, label: "سفارشات", href: "/admin/orders" },
   { icon: Truck, label: "روش‌های ارسال", href: "/admin/shipping" },
+  { icon: MessageSquare, label: "نظرات", href: "/admin/reviews" },
   { icon: Settings, label: "تنظیمات", href: "/admin/settings" },
 ];
 
