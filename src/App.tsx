@@ -34,7 +34,13 @@ import AdminReviews from "./pages/admin/Reviews";
 import AdminUsers from "./pages/admin/Users";
 import AdminEnrollments from "./pages/admin/Enrollments";
 import AdminSettings from "./pages/admin/Settings";
+import AdminPortfolio from "./pages/admin/Portfolio";
 import CourseDetail from "./pages/CourseDetail";
+import FAQ from "./pages/FAQ";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Contact from "./pages/Contact";
+import Portfolio from "./pages/Portfolio";
 
 const queryClient = new QueryClient();
 
@@ -68,13 +74,15 @@ const App = () => (
               <Route path="/specialists/:id" element={<SpecialistDetail />} />
               <Route path="/booking" element={<Booking />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/portfolio" element={<Portfolio />} />
             
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminLayout />}>
                 <Route index element={<AdminDashboard />} />
-                <Route path="services" element={<AdminServices />} />
-                <Route path="products" element={<AdminProducts />} />
-                <Route path="specialists" element={<AdminSpecialists />} />
                 <Route path="courses" element={<AdminCourses />} />
                 <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
                 <Route path="bookings" element={<AdminBookings />} />
@@ -83,6 +91,7 @@ const App = () => (
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="enrollments" element={<AdminEnrollments />} />
+                <Route path="portfolio" element={<AdminPortfolio />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 
