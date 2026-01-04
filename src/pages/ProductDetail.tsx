@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { ReviewForm } from "@/components/reviews/ReviewForm";
+import { ReviewsList } from "@/components/reviews/ReviewsList";
 import {
   ShoppingCart,
   Star,
@@ -331,6 +333,19 @@ export default function ProductDetail() {
                 </div>
               )}
             </motion.div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="mt-16">
+            <h2 className="text-2xl font-bold mb-8">نظرات و امتیازها</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2">
+                <ReviewsList productId={product.id} />
+              </div>
+              <div>
+                <ReviewForm productId={product.id} />
+              </div>
+            </div>
           </div>
         </div>
       </main>

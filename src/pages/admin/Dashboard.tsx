@@ -8,9 +8,11 @@ import {
   TrendingUp,
   DollarSign,
   Eye,
-  Clock
+  Clock,
+  MessageSquare
 } from "lucide-react";
 import { StatsCard } from "@/components/admin/StatsCard";
+import { SalesChart } from "@/components/admin/SalesChart";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Stats {
@@ -19,6 +21,8 @@ interface Stats {
   totalCourses: number;
   totalSpecialists: number;
   pendingBookings: number;
+  totalOrders: number;
+  pendingReviews: number;
 }
 
 export default function AdminDashboard() {
@@ -28,6 +32,8 @@ export default function AdminDashboard() {
     totalCourses: 0,
     totalSpecialists: 0,
     pendingBookings: 0,
+    totalOrders: 0,
+    pendingReviews: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -37,14 +43,17 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const [bookings, products, courses, specialists] = await Promise.all([
+      const [bookings, products, courses, specialists, orders, reviews] = await Promise.all([
         supabase.from("bookings").select("id, status", { count: "exact" }),
         supabase.from("products").select("id", { count: "exact" }),
         supabase.from("courses").select("id", { count: "exact" }),
         supabase.from("specialists").select("id", { count: "exact" }),
+        supabase.from("orders").select("id", { count: "exact" }),
+        supabase.from("reviews").select("id, is_approved", { count: "exact" }),
       ]);
 
       const pendingBookings = bookings.data?.filter(b => b.status === "pending").length || 0;
+      const pendingReviews = reviews.data?.filter(r => !r.is_approved).length || 0;
 
       setStats({
         totalBookings: bookings.count || 0,
@@ -52,6 +61,8 @@ export default function AdminDashboard() {
         totalCourses: courses.count || 0,
         totalSpecialists: specialists.count || 0,
         pendingBookings,
+        totalOrders: orders.count || 0,
+        pendingReviews,
       });
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -70,23 +81,21 @@ export default function AdminDashboard() {
       iconColor: "bg-blue-100 text-blue-600",
     },
     {
+      title: "سفارشات",
+      value: stats.totalOrders,
+      icon: Package,
+      iconColor: "bg-green-100 text-green-600",
+    },
+    {
       title: "رزروهای در انتظار",
       value: stats.pendingBookings,
       icon: Clock,
       iconColor: "bg-amber-100 text-amber-600",
     },
     {
-      title: "محصولات",
-      value: stats.totalProducts,
-      change: "+۵",
-      changeType: "positive" as const,
-      icon: Package,
-      iconColor: "bg-green-100 text-green-600",
-    },
-    {
-      title: "دوره‌های آموزشی",
-      value: stats.totalCourses,
-      icon: GraduationCap,
+      title: "نظرات در انتظار",
+      value: stats.pendingReviews,
+      icon: MessageSquare,
       iconColor: "bg-purple-100 text-purple-600",
     },
     {
@@ -119,13 +128,27 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      {/* Quick Actions */}
+      {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Bookings */}
+        {/* Sales Chart */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
+          className="bg-card rounded-2xl p-6 border border-border shadow-card"
+        >
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            آمار فروش
+          </h2>
+          <SalesChart />
+        </motion.div>
+
+        {/* Recent Activity */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
           className="bg-card rounded-2xl p-6 border border-border shadow-card"
         >
           <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
@@ -142,31 +165,6 @@ export default function AdminDashboard() {
                 {stats.totalBookings} رزرو ثبت شده
               </p>
             )}
-          </div>
-        </motion.div>
-
-        {/* Quick Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="bg-card rounded-2xl p-6 border border-border shadow-card"
-        >
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            عملکرد سریع
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-muted/50 rounded-xl p-4 text-center">
-              <Eye className="w-8 h-8 text-primary mx-auto mb-2" />
-              <p className="text-2xl font-bold">۱,۲۳۴</p>
-              <p className="text-sm text-muted-foreground">بازدید امروز</p>
-            </div>
-            <div className="bg-muted/50 rounded-xl p-4 text-center">
-              <DollarSign className="w-8 h-8 text-green-600 mx-auto mb-2" />
-              <p className="text-2xl font-bold">۵.۲M</p>
-              <p className="text-sm text-muted-foreground">درآمد ماهانه</p>
-            </div>
           </div>
         </motion.div>
       </div>
