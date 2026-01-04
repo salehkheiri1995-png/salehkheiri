@@ -601,12 +601,12 @@ export default function AdminSettings() {
               </motion.div>
             </div>
           </TabsContent>
-        </Tabs>
 
-        {/* Appearance Tab */}
-        <TabsContent value="appearance">
-          <ThemeSettingsTab />
-        </TabsContent>
+          {/* Appearance Tab */}
+          <TabsContent value="appearance">
+            <ThemeSettingsTab />
+          </TabsContent>
+        </Tabs>
 
         {/* Save Button */}
         <motion.div
