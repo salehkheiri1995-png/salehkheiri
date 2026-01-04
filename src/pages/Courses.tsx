@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Clock, Users, Star, Play, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Courses() {
+  const navigate = useNavigate();
   const { data: courses, isLoading } = useQuery({
     queryKey: ["courses"],
     queryFn: async () => {
@@ -71,7 +72,8 @@ export default function Courses() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="group bg-card rounded-2xl overflow-hidden shadow-card hover-lift"
+                  className="group bg-card rounded-2xl overflow-hidden shadow-card hover-lift cursor-pointer"
+                  onClick={() => navigate(`/courses/${course.id}`)}
                 >
                   {/* Image */}
                   <div className="relative h-48 overflow-hidden">
@@ -133,7 +135,9 @@ export default function Courses() {
                           </span>
                         )}
                       </div>
-                      <Button size="sm">ثبت‌نام</Button>
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); navigate(`/courses/${course.id}`); }}>
+                        مشاهده دوره
+                      </Button>
                     </div>
                   </div>
                 </motion.div>

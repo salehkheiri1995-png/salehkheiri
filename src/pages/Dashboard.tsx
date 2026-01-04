@@ -82,6 +82,25 @@ export default function Dashboard() {
     enabled: !!user?.id,
   });
 
+  // Fetch user enrolled courses
+  const { data: enrolledCourses, isLoading: coursesLoading } = useQuery({
+    queryKey: ["user-courses", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("course_enrollments")
+        .select(`
+          *,
+          course:course_id(id, title, image_url, duration_hours, instructor_name)
+        `)
+        .eq("user_id", user.id)
+        .order("enrolled_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
   // Update profile mutation
   const updateProfile = useMutation({
     mutationFn: async () => {
@@ -237,7 +256,7 @@ export default function Dashboard() {
             <Card className="bg-secondary/50 border-secondary">
               <CardContent className="p-4 text-center">
                 <BookOpen className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-2xl font-bold">۰</p>
+                <p className="text-2xl font-bold">{enrolledCourses?.length || 0}</p>
                 <p className="text-sm text-muted-foreground">دوره</p>
               </CardContent>
             </Card>
@@ -381,13 +400,57 @@ export default function Dashboard() {
 
               {/* Courses Tab */}
               <TabsContent value="courses">
-                <Card className="p-8 text-center">
-                  <BookOpen className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-muted-foreground mb-4">دوره‌ای خریداری نشده است</p>
-                  <Button asChild variant="outline">
-                    <Link to="/courses">مشاهده دوره‌ها</Link>
-                  </Button>
-                </Card>
+                {coursesLoading ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {[...Array(2)].map((_, i) => (
+                      <Skeleton key={i} className="h-32 rounded-xl" />
+                    ))}
+                  </div>
+                ) : enrolledCourses && enrolledCourses.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {enrolledCourses.map((enrollment: any) => (
+                      <Card key={enrollment.id} className="overflow-hidden">
+                        <CardContent className="p-0">
+                          <div className="flex">
+                            <div className="w-32 h-24 flex-shrink-0">
+                              <img
+                                src={enrollment.course?.image_url || "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=200&h=150&fit=crop"}
+                                alt={enrollment.course?.title}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <div className="p-4 flex-1">
+                              <h3 className="font-bold mb-1 line-clamp-1">
+                                {enrollment.course?.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mb-2">
+                                مدرس: {enrollment.course?.instructor_name}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground">
+                                  {enrollment.progress_percent || 0}% پیشرفت
+                                </span>
+                                <Button asChild size="sm" variant="outline">
+                                  <Link to={`/courses/${enrollment.course?.id}`}>
+                                    ادامه
+                                  </Link>
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="p-8 text-center">
+                    <BookOpen className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-muted-foreground mb-4">دوره‌ای خریداری نشده است</p>
+                    <Button asChild variant="outline">
+                      <Link to="/courses">مشاهده دوره‌ها</Link>
+                    </Button>
+                  </Card>
+                )}
               </TabsContent>
 
               {/* Profile Tab */}
