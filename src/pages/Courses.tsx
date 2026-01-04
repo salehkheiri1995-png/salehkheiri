@@ -1,0 +1,157 @@
+import { motion } from "framer-motion";
+import { Clock, Users, Star, Play, GraduationCap } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export default function Courses() {
+  const { data: courses, isLoading } = useQuery({
+    queryKey: ["courses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("fa-IR").format(price);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="pt-24 pb-16">
+        <div className="container">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-16"
+          >
+            <span className="text-primary font-medium mb-4 block">دوره‌های آموزشی</span>
+            <h1 className="text-3xl md:text-5xl font-bold mb-4">
+              آموزش <span className="gradient-text">حرفه‌ای</span> زیبایی
+            </h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              با دوره‌های تخصصی ما، مهارت‌های زیبایی خود را ارتقا دهید
+            </p>
+          </motion.div>
+
+          {/* Courses Grid */}
+          {isLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="bg-card rounded-2xl overflow-hidden">
+                  <Skeleton className="h-48 w-full" />
+                  <div className="p-6 space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : courses && courses.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((course, index) => (
+                <motion.div
+                  key={course.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="group bg-card rounded-2xl overflow-hidden shadow-card hover-lift"
+                >
+                  {/* Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={course.image_url || "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=600&h=400&fit=crop"}
+                      alt={course.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 to-transparent" />
+                    
+                    {/* Play Button */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center">
+                        <Play className="w-6 h-6 text-primary-foreground fill-primary-foreground" />
+                      </div>
+                    </div>
+
+                    {/* Badges */}
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      {course.is_new && (
+                        <Badge className="bg-accent text-accent-foreground">جدید</Badge>
+                      )}
+                      <Badge variant="secondary">{course.level}</Badge>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    <h3 className="text-lg font-bold mb-2 line-clamp-1">{course.title}</h3>
+                    <p className="text-muted-foreground text-sm mb-4">
+                      مدرس: {course.instructor_name || "نامشخص"}
+                    </p>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {course.duration_hours} ساعت
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {course.students_count} دانشجو
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-accent fill-accent" />
+                        {Number(course.rating).toFixed(1)}
+                      </span>
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex items-center justify-between pt-4 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-primary">
+                          {formatPrice(Number(course.price))} تومان
+                        </span>
+                        {course.original_price && (
+                          <span className="text-sm text-muted-foreground line-through">
+                            {formatPrice(Number(course.original_price))}
+                          </span>
+                        )}
+                      </div>
+                      <Button size="sm">ثبت‌نام</Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <GraduationCap className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">هنوز دوره‌ای اضافه نشده است</p>
+              <Button asChild variant="outline" className="mt-4">
+                <Link to="/">بازگشت به خانه</Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
