@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Calendar, Clock, User, Sparkles, ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { Calendar, Clock, User, Sparkles, ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,7 @@ export default function Booking() {
         .select("booking_time")
         .eq("booking_date", selectedDate)
         .eq("specialist_id", selectedSpecialist)
-        .in("status", ["pending", "confirmed"]); // Only count pending and confirmed bookings
+        .in("status", ["pending", "confirmed"]);
       
       if (error) throw error;
       return data?.map(b => b.booking_time) || [];
@@ -94,7 +94,6 @@ export default function Booking() {
     enabled: !!selectedDate && !!selectedSpecialist,
   });
 
-  // Pre-select service or specialist from URL params
   useEffect(() => {
     const serviceIdParam = searchParams.get("service");
     const serviceNameParam = searchParams.get("serviceName");
@@ -110,7 +109,7 @@ export default function Booking() {
       
       if (matchedService) {
         setSelectedService(matchedService.id);
-        setCurrentStep(2); // Go to specialist selection
+        setCurrentStep(2);
       }
     }
   }, [searchParams, services]);
@@ -131,7 +130,7 @@ export default function Booking() {
       if (matchedSpecialist) {
         setSelectedSpecialist(matchedSpecialist.id);
         if (selectedService) {
-          setCurrentStep(3); // Go to date/time selection
+          setCurrentStep(3);
         }
       }
     }
@@ -140,7 +139,6 @@ export default function Booking() {
   // Create booking mutation
   const createBooking = useMutation({
     mutationFn: async () => {
-      // Check if time is still available before booking
       const { data: existingBooking, error: checkError } = await supabase
         .from("bookings")
         .select("id")
@@ -175,7 +173,6 @@ export default function Booking() {
       });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       queryClient.invalidateQueries({ queryKey: ["booked-times"] });
-      // Reset form
       setCurrentStep(1);
       setSelectedService(null);
       setSelectedSpecialist(null);
@@ -233,7 +230,6 @@ export default function Booking() {
     createBooking.mutate();
   };
 
-  // Generate next 14 days for date selection
   const getAvailableDates = () => {
     const dates = [];
     const today = new Date();
@@ -248,7 +244,6 @@ export default function Booking() {
     return dates;
   };
 
-  // Count available slots for a specific date
   const getAvailableSlotsCount = (date: string) => {
     if (date !== selectedDate || !bookedTimes) return null;
     const availableCount = timeSlots.length - (bookedTimes?.length || 0);
@@ -261,7 +256,6 @@ export default function Booking() {
       
       <main className="pt-24 pb-16">
         <div className="container max-w-4xl">
-          {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -276,7 +270,6 @@ export default function Booking() {
             </p>
           </motion.div>
 
-          {/* Progress Steps */}
           <div className="flex justify-center mb-12">
             <div className="flex items-center gap-2 md:gap-4">
               {steps.map((step, index) => (
@@ -306,10 +299,8 @@ export default function Booking() {
             </div>
           </div>
 
-          {/* Step Content */}
           <Card className="shadow-card">
             <CardContent className="p-6">
-              {/* Step 1: Select Service */}
               {currentStep === 1 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -359,7 +350,6 @@ export default function Booking() {
                 </motion.div>
               )}
 
-              {/* Step 2: Select Specialist */}
               {currentStep === 2 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -411,7 +401,6 @@ export default function Booking() {
                 </motion.div>
               )}
 
-              {/* Step 3: Select Date & Time */}
               {currentStep === 3 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -419,7 +408,6 @@ export default function Booking() {
                 >
                   <h2 className="text-xl font-bold mb-6">انتخاب تاریخ و ساعت</h2>
                   
-                  {/* Date Selection */}
                   <div className="mb-8">
                     <Label className="mb-3 block">تاریخ</Label>
                     <div className="flex gap-2 overflow-x-auto pb-2">
@@ -430,7 +418,7 @@ export default function Booking() {
                             key={date.value}
                             onClick={() => {
                               setSelectedDate(date.value);
-                              setSelectedTime(null); // Reset time when date changes
+                              setSelectedTime(null);
                             }}
                             className={cn(
                               "flex-shrink-0 px-4 py-3 rounded-xl border-2 text-center transition-all",
@@ -451,7 +439,6 @@ export default function Booking() {
                     </div>
                   </div>
 
-                  {/* Time Selection */}
                   <div>
                     <Label className="mb-3 block">
                       ساعت {bookedTimesLoading && "(در حال بارگیری...)"}
@@ -459,46 +446,65 @@ export default function Booking() {
                     {bookedTimesLoading ? (
                       <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
                         {timeSlots.map((time) => (
-                          <Skeleton key={time} className="h-12 rounded-lg" />
+                          <Skeleton key={time} className="h-16 rounded-lg" />
                         ))}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                        {timeSlots.map((time) => {
-                          const isBooked = isTimeBooked(time);
-                          return (
-                            <button
-                              key={time}
-                              onClick={() => !isBooked && setSelectedTime(time)}
-                              disabled={isBooked}
-                              className={cn(
-                                "px-3 py-2 rounded-lg border-2 text-center transition-all",
-                                isBooked
-                                  ? "border-red-300 bg-red-50 text-red-600 cursor-not-allowed opacity-50"
-                                  : selectedTime === time
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-border hover:border-primary/50"
-                              )}
-                              title={isBooked ? "این ساعت رزرو شده است" : ""}
-                            >
-                              <Clock className="w-4 h-4 mx-auto mb-1" />
-                              <span className="text-sm">{time}</span>
-                              {isBooked && <span className="text-xs block">پر</span>}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <>
+                        <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                          {timeSlots.map((time) => {
+                            const isBooked = isTimeBooked(time);
+                            return (
+                              <button
+                                key={time}
+                                onClick={() => !isBooked && setSelectedTime(time)}
+                                disabled={isBooked}
+                                className={cn(
+                                  "px-3 py-3 rounded-lg border-2 text-center transition-all font-medium text-sm",
+                                  isBooked
+                                    ? "border-red-500 bg-red-100 text-red-700 cursor-not-allowed"
+                                    : selectedTime === time
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-green-300 bg-green-50 text-gray-700 hover:border-green-500 hover:bg-green-100"
+                                )}
+                                title={isBooked ? "این ساعت رزرو شده است" : "دسترس"}
+                              >
+                                {isBooked ? (
+                                  <>
+                                    <X className="w-4 h-4 mx-auto mb-0.5" />
+                                    <span className="text-xs">{time}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Clock className="w-4 h-4 mx-auto mb-0.5" />
+                                    <span>{time}</span>
+                                  </>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-4 flex gap-6 text-sm">
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 bg-green-50 border-2 border-green-300 rounded"></div>
+                            <span className="text-gray-700">سـاعت آزاد</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 bg-red-100 border-2 border-red-500 rounded"></div>
+                            <span className="text-red-700 font-medium">رزرو شده</span>
+                          </div>
+                        </div>
+                      </>
                     )}
                     {selectedDate && bookedTimes && bookedTimes.length > 0 && (
                       <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                        <strong>ساعت‌های اشغال شده:</strong> {bookedTimes.join("، ")}
+                        <strong>ساعت‌های اشغال شده:</strong> {bookedTimes.join(", ")}
                       </div>
                     )}
                   </div>
                 </motion.div>
               )}
 
-              {/* Step 4: Confirmation */}
               {currentStep === 4 && (
                 <motion.div
                   initial={{ opacity: 0, x: 20 }}
@@ -506,7 +512,6 @@ export default function Booking() {
                 >
                   <h2 className="text-xl font-bold mb-6">اطلاعات تماس و تأیید</h2>
                   
-                  {/* Summary */}
                   <div className="bg-muted/50 rounded-xl p-4 mb-6">
                     <h3 className="font-bold mb-3">خلاصه رزرو</h3>
                     <div className="space-y-2 text-sm">
@@ -537,7 +542,6 @@ export default function Booking() {
                     </div>
                   </div>
 
-                  {/* Contact Form */}
                   <div className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
@@ -556,7 +560,7 @@ export default function Booking() {
                           id="phone"
                           value={customerInfo.phone}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                          placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                          placeholder="09121234567"
                           className="mt-1"
                           dir="ltr"
                         />
@@ -589,7 +593,6 @@ export default function Booking() {
                 </motion.div>
               )}
 
-              {/* Navigation Buttons */}
               <div className="flex justify-between mt-8 pt-6 border-t border-border">
                 <Button
                   variant="outline"
