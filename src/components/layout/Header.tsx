@@ -11,6 +11,7 @@ import { NotificationBell } from "@/components/notifications/NotificationBell";
 const navLinks = [
   { href: "/", label: "خانه" },
   { href: "/services", label: "خدمات" },
+  { href: "/portfolio", label: "نمونه‌کارها" },
   { href: "/specialists", label: "متخصصان" },
   { href: "/courses", label: "دوره‌های آموزشی" },
   { href: "/shop", label: "فروشگاه" },
