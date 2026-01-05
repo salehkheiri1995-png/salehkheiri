@@ -94,6 +94,31 @@ export default function Booking() {
     enabled: !!selectedDate && !!selectedSpecialist,
   });
 
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (!selectedDate || !selectedSpecialist) return;
+
+    const channel = supabase
+      .channel(`bookings:${selectedSpecialist}:${selectedDate}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookings",
+          filter: `specialist_id=eq.${selectedSpecialist}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["booked-times", selectedDate, selectedSpecialist] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedDate, selectedSpecialist, queryClient]);
+
   useEffect(() => {
     const serviceIdParam = searchParams.get("service");
     const serviceNameParam = searchParams.get("serviceName");
@@ -204,7 +229,7 @@ export default function Booking() {
     switch (currentStep) {
       case 1: return !!selectedService;
       case 2: return !!selectedSpecialist;
-      case 3: return !!selectedDate && !!selectedTime;
+      case 3: return !!selectedDate && !!selectedTime && !isTimeBooked(selectedTime);
       case 4: return customerInfo.name && customerInfo.phone;
       default: return false;
     }
