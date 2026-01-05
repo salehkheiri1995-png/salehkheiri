@@ -89,7 +89,14 @@ export default function Booking() {
         .in("status", ["pending", "confirmed"]);
       
       if (error) throw error;
-      return data?.map(b => b.booking_time) || [];
+      // Convert HH:MM:SS to HH:MM format
+      return data?.map(b => {
+        const time = b.booking_time;
+        if (typeof time === "string" && time.includes(":")) {
+          return time.substring(0, 5); // Takes first 5 chars: HH:MM
+        }
+        return time;
+      }) || [];
     },
     enabled: !!selectedDate && !!selectedSpecialist,
   });
