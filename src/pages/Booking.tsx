@@ -196,8 +196,8 @@ export default function Booking() {
   const getSelectedServiceData = () => services?.find(s => s.id === selectedService);
   const getSelectedSpecialistData = () => specialists?.find(s => s.id === selectedSpecialist);
 
-  const isTimeBooked = (time: string) => {
-    return bookedTimes?.includes(time) || false;
+  const isTimeBooked = (time: string): boolean => {
+    return bookedTimes?.includes(time) ?? false;
   };
 
   const canProceed = () => {
@@ -453,31 +453,36 @@ export default function Booking() {
                       <>
                         <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
                           {timeSlots.map((time) => {
-                            const isBooked = isTimeBooked(time);
+                            const booked = isTimeBooked(time);
+                            const selected = selectedTime === time;
+                            
                             return (
                               <button
                                 key={time}
-                                onClick={() => !isBooked && setSelectedTime(time)}
-                                disabled={isBooked}
+                                type="button"
+                                onClick={() => {
+                                  if (!booked) setSelectedTime(time);
+                                }}
+                                disabled={booked}
                                 className={cn(
-                                  "px-3 py-3 rounded-lg border-2 text-center transition-all font-medium text-sm",
-                                  isBooked
-                                    ? "border-red-500 bg-red-100 text-red-700 cursor-not-allowed"
-                                    : selectedTime === time
+                                  "px-3 py-3 rounded-lg border-2 text-center transition-all font-medium text-sm min-h-20 flex flex-col items-center justify-center",
+                                  booked
+                                    ? "border-red-500 bg-red-100 text-red-700 cursor-not-allowed opacity-100 pointer-events-none"
+                                    : selected
                                     ? "border-primary bg-primary text-primary-foreground"
-                                    : "border-green-300 bg-green-50 text-gray-700 hover:border-green-500 hover:bg-green-100"
+                                    : "border-green-300 bg-green-50 text-gray-700 hover:border-green-500 hover:bg-green-100 cursor-pointer"
                                 )}
-                                title={isBooked ? "این ساعت رزرو شده است" : "دسترس"}
+                                title={booked ? "این ساعت رزرو شده است" : ""}
                               >
-                                {isBooked ? (
+                                {booked ? (
                                   <>
-                                    <X className="w-4 h-4 mx-auto mb-0.5" />
+                                    <X className="w-4 h-4 mb-0.5" />
                                     <span className="text-xs">{time}</span>
                                   </>
                                 ) : (
                                   <>
-                                    <Clock className="w-4 h-4 mx-auto mb-0.5" />
-                                    <span>{time}</span>
+                                    <Clock className="w-4 h-4 mb-0.5" />
+                                    <span className="text-sm">{time}</span>
                                   </>
                                 )}
                               </button>
@@ -487,7 +492,7 @@ export default function Booking() {
                         <div className="mt-4 flex gap-6 text-sm">
                           <div className="flex items-center gap-2">
                             <div className="w-5 h-5 bg-green-50 border-2 border-green-300 rounded"></div>
-                            <span className="text-gray-700">سـاعت آزاد</span>
+                            <span className="text-gray-700 font-medium">ساعت آزاد</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="w-5 h-5 bg-red-100 border-2 border-red-500 rounded"></div>
