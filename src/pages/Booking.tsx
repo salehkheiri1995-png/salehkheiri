@@ -76,7 +76,7 @@ export default function Booking() {
   });
 
   // Fetch booked times for selected date and specialist
-  const { data: bookedTimes } = useQuery({
+  const { data: bookedTimes, isLoading: bookedTimesLoading } = useQuery({
     queryKey: ["booked-times", selectedDate, selectedSpecialist],
     queryFn: async () => {
       if (!selectedDate || !selectedSpecialist) return [];
@@ -248,6 +248,13 @@ export default function Booking() {
     return dates;
   };
 
+  // Count available slots for a specific date
+  const getAvailableSlotsCount = (date: string) => {
+    if (date !== selectedDate || !bookedTimes) return null;
+    const availableCount = timeSlots.length - (bookedTimes?.length || 0);
+    return availableCount > 0 ? availableCount : 0;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -416,53 +423,77 @@ export default function Booking() {
                   <div className="mb-8">
                     <Label className="mb-3 block">تاریخ</Label>
                     <div className="flex gap-2 overflow-x-auto pb-2">
-                      {getAvailableDates().map((date) => (
-                        <button
-                          key={date.value}
-                          onClick={() => {
-                            setSelectedDate(date.value);
-                            setSelectedTime(null); // Reset time when date changes
-                          }}
-                          className={cn(
-                            "flex-shrink-0 px-4 py-3 rounded-xl border-2 text-center transition-all",
-                            selectedDate === date.value
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          <span className="text-sm font-medium">{date.label}</span>
-                        </button>
-                      ))}
+                      {getAvailableDates().map((date) => {
+                        const availableSlots = selectedDate === date.value ? getAvailableSlotsCount(date.value) : null;
+                        return (
+                          <button
+                            key={date.value}
+                            onClick={() => {
+                              setSelectedDate(date.value);
+                              setSelectedTime(null); // Reset time when date changes
+                            }}
+                            className={cn(
+                              "flex-shrink-0 px-4 py-3 rounded-xl border-2 text-center transition-all",
+                              selectedDate === date.value
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:border-primary/50"
+                            )}
+                          >
+                            <span className="text-sm font-medium">{date.label}</span>
+                            {selectedDate === date.value && availableSlots !== null && (
+                              <span className="text-xs text-muted-foreground block mt-1">
+                                {availableSlots} ساعت آزاد
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
                   {/* Time Selection */}
                   <div>
-                    <Label className="mb-3 block">ساعت</Label>
-                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                      {timeSlots.map((time) => {
-                        const isBooked = isTimeBooked(time);
-                        return (
-                          <button
-                            key={time}
-                            onClick={() => !isBooked && setSelectedTime(time)}
-                            disabled={isBooked}
-                            className={cn(
-                              "px-3 py-2 rounded-lg border-2 text-center transition-all",
-                              isBooked
-                                ? "border-red-300 bg-red-50 text-red-600 cursor-not-allowed opacity-50"
-                                : selectedTime === time
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border hover:border-primary/50"
-                            )}
-                          >
-                            <Clock className="w-4 h-4 mx-auto mb-1" />
-                            <span className="text-sm">{time}</span>
-                            {isBooked && <span className="text-xs block">رزرو شده</span>}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <Label className="mb-3 block">
+                      ساعت {bookedTimesLoading && "(در حال بارگیری...)"}
+                    </Label>
+                    {bookedTimesLoading ? (
+                      <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                        {timeSlots.map((time) => (
+                          <Skeleton key={time} className="h-12 rounded-lg" />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                        {timeSlots.map((time) => {
+                          const isBooked = isTimeBooked(time);
+                          return (
+                            <button
+                              key={time}
+                              onClick={() => !isBooked && setSelectedTime(time)}
+                              disabled={isBooked}
+                              className={cn(
+                                "px-3 py-2 rounded-lg border-2 text-center transition-all",
+                                isBooked
+                                  ? "border-red-300 bg-red-50 text-red-600 cursor-not-allowed opacity-50"
+                                  : selectedTime === time
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-border hover:border-primary/50"
+                              )}
+                              title={isBooked ? "این ساعت رزرو شده است" : ""}
+                            >
+                              <Clock className="w-4 h-4 mx-auto mb-1" />
+                              <span className="text-sm">{time}</span>
+                              {isBooked && <span className="text-xs block">پر</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {selectedDate && bookedTimes && bookedTimes.length > 0 && (
+                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                        <strong>ساعت‌های اشغال شده:</strong> {bookedTimes.join("، ")}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
