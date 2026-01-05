@@ -75,6 +75,25 @@ export default function Booking() {
     },
   });
 
+  // Fetch booked times for selected date and specialist
+  const { data: bookedTimes } = useQuery({
+    queryKey: ["booked-times", selectedDate, selectedSpecialist],
+    queryFn: async () => {
+      if (!selectedDate || !selectedSpecialist) return [];
+      
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("booking_time")
+        .eq("booking_date", selectedDate)
+        .eq("specialist_id", selectedSpecialist)
+        .in("status", ["pending", "confirmed"]); // Only count pending and confirmed bookings
+      
+      if (error) throw error;
+      return data?.map(b => b.booking_time) || [];
+    },
+    enabled: !!selectedDate && !!selectedSpecialist,
+  });
+
   // Pre-select service or specialist from URL params
   useEffect(() => {
     const serviceIdParam = searchParams.get("service");
@@ -121,6 +140,20 @@ export default function Booking() {
   // Create booking mutation
   const createBooking = useMutation({
     mutationFn: async () => {
+      // Check if time is still available before booking
+      const { data: existingBooking, error: checkError } = await supabase
+        .from("bookings")
+        .select("id")
+        .eq("booking_date", selectedDate)
+        .eq("booking_time", selectedTime)
+        .eq("specialist_id", selectedSpecialist)
+        .in("status", ["pending", "confirmed"])
+        .single();
+      
+      if (checkError?.code !== "PGRST116" && existingBooking) {
+        throw new Error("این ساعت قبلاً رزرو شده است");
+      }
+
       const { error } = await supabase.from("bookings").insert({
         service_id: selectedService,
         specialist_id: selectedSpecialist,
@@ -141,6 +174,7 @@ export default function Booking() {
         description: "نوبت شما با موفقیت ثبت شد. منتظر تأیید باشید.",
       });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["booked-times"] });
       // Reset form
       setCurrentStep(1);
       setSelectedService(null);
@@ -149,10 +183,10 @@ export default function Booking() {
       setSelectedTime(null);
       setCustomerInfo({ name: "", phone: "", email: "", notes: "" });
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "خطا",
-        description: "مشکلی در ثبت رزرو پیش آمد. لطفاً دوباره تلاش کنید.",
+        description: error.message || "مشکلی در ثبت رزرو پیش آمد. لطفاً دوباره تلاش کنید.",
         variant: "destructive",
       });
     },
@@ -164,6 +198,10 @@ export default function Booking() {
 
   const getSelectedServiceData = () => services?.find(s => s.id === selectedService);
   const getSelectedSpecialistData = () => specialists?.find(s => s.id === selectedSpecialist);
+
+  const isTimeBooked = (time: string) => {
+    return bookedTimes?.includes(time) || false;
+  };
 
   const canProceed = () => {
     switch (currentStep) {
@@ -381,7 +419,10 @@ export default function Booking() {
                       {getAvailableDates().map((date) => (
                         <button
                           key={date.value}
-                          onClick={() => setSelectedDate(date.value)}
+                          onClick={() => {
+                            setSelectedDate(date.value);
+                            setSelectedTime(null); // Reset time when date changes
+                          }}
                           className={cn(
                             "flex-shrink-0 px-4 py-3 rounded-xl border-2 text-center transition-all",
                             selectedDate === date.value
@@ -399,21 +440,28 @@ export default function Booking() {
                   <div>
                     <Label className="mb-3 block">ساعت</Label>
                     <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                      {timeSlots.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() => setSelectedTime(time)}
-                          className={cn(
-                            "px-3 py-2 rounded-lg border-2 text-center transition-all",
-                            selectedTime === time
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          <Clock className="w-4 h-4 mx-auto mb-1" />
-                          <span className="text-sm">{time}</span>
-                        </button>
-                      ))}
+                      {timeSlots.map((time) => {
+                        const isBooked = isTimeBooked(time);
+                        return (
+                          <button
+                            key={time}
+                            onClick={() => !isBooked && setSelectedTime(time)}
+                            disabled={isBooked}
+                            className={cn(
+                              "px-3 py-2 rounded-lg border-2 text-center transition-all",
+                              isBooked
+                                ? "border-red-300 bg-red-50 text-red-600 cursor-not-allowed opacity-50"
+                                : selectedTime === time
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border hover:border-primary/50"
+                            )}
+                          >
+                            <Clock className="w-4 h-4 mx-auto mb-1" />
+                            <span className="text-sm">{time}</span>
+                            {isBooked && <span className="text-xs block">رزرو شده</span>}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 </motion.div>
