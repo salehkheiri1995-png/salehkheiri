@@ -557,7 +557,9 @@ export default function AdminCourses() {
                   <td className="p-4 text-center font-bold text-primary">{formatPrice(course.price)}</td>
                   <td className="p-4 text-center">{course.students_count || 0}</td>
                   <td className="p-4 text-center">
-                    <Badge variant={course.is_active ? "default" : "destructive"}>{✅ فعال" if course.is_active else "❌ غیرفعال"}</Badge>
+                    <Badge variant={course.is_active ? "default" : "destructive"}>
+                      {course.is_active ? "✅ فعال" : "❌ غیرفعال"}
+                    </Badge>
                   </td>
                   <td className="p-4 text-center">
                     <DropdownMenu>
