@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen, LayoutGrid, List } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen, LayoutGrid, List, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { coursesService, Course } from "@/services/coursesService";
+import { coursesService, enrollmentsService, Course } from "@/services/coursesService";
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -30,7 +30,14 @@ export default function AdminCourses() {
   const fetchCourses = () => {
     try {
       setLoading(true);
-      const data = coursesService.getAllCourses();
+      let data = coursesService.getAllCourses();
+      
+      // به‌روزرسانی تعداد دانشجویان از enrollments
+      data = data.map(course => ({
+        ...course,
+        students_count: enrollmentsService.getEnrollmentsByCourse(course.id).length
+      }));
+      
       setCourses(data);
     } catch (error) {
       console.error('خطا در دریافت دوره‌ها:', error);
@@ -105,12 +112,17 @@ export default function AdminCourses() {
             {filteredCourses.length} دوره از {courses.length} نمایش داده می‌شود
           </p>
         </div>
-        <Link to="/admin/courses/new">
-          <Button className="gap-2 h-11">
-            <Plus className="w-4 h-4" />
-            افزودن دوره
+        <div className="flex gap-2">
+          <Button asChild variant="outline">
+            <Link to="/admin/sample-data">Seed Data</Link>
           </Button>
-        </Link>
+          <Button asChild>
+            <Link to="/admin/courses/new" className="gap-2">
+              <Plus className="w-4 h-4" />
+              افزودن دوره
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -262,6 +274,12 @@ export default function AdminCourses() {
                           دروس
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to={`/admin/courses/${course.id}/enrollments`} className="gap-2">
+                          <Users className="w-4 h-4" />
+                          ثبت‌نام‌ها
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => setDeleteConfirmId(course.id)} className="text-red-600 gap-2">
                         <Trash2 className="w-4 h-4" />
@@ -351,6 +369,12 @@ export default function AdminCourses() {
                           <Link to={`/admin/courses/${course.id}/lessons`} className="gap-2">
                             <BookOpen className="w-4 h-4" />
                             دروس
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to={`/admin/courses/${course.id}/enrollments`} className="gap-2">
+                            <Users className="w-4 h-4" />
+                            ثبت‌نام‌ها
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
