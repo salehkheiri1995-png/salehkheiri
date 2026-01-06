@@ -26,6 +26,7 @@ import AdminServices from "./pages/admin/Services";
 import AdminProducts from "./pages/admin/Products";
 import AdminSpecialists from "./pages/admin/Specialists";
 import AdminCourses from "./pages/admin/Courses";
+import CourseForm from "./pages/admin/CourseForm";
 import AdminLessons from "./pages/admin/Lessons";
 import AdminBookings from "./pages/admin/Bookings";
 import AdminOrders from "./pages/admin/Orders";
@@ -88,6 +89,8 @@ const App = () => (
                 <Route path="specialists" element={<AdminSpecialists />} />
                 <Route path="products" element={<AdminProducts />} />
                 <Route path="courses" element={<AdminCourses />} />
+                <Route path="courses/new" element={<CourseForm />} />
+                <Route path="courses/:courseId/edit" element={<CourseForm />} />
                 <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
                 <Route path="bookings" element={<AdminBookings />} />
                 <Route path="orders" element={<AdminOrders />} />
