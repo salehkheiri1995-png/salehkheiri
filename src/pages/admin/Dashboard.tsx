@@ -214,7 +214,7 @@ export default function AdminDashboard() {
     {
       title: "سفارشات",
       value: stats.totalOrders,
-      subtitle: `${stats.pendingOrders} در انتظار",
+      subtitle: `${stats.pendingOrders} در انتظار`,
       icon: ShoppingCart,
       gradient: "from-blue-500/10 to-blue-500/5",
       iconBg: "bg-blue-500/20 text-blue-600 dark:text-blue-400",
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
     },
     {
       title: "درآمد کل",
-      value: `${formatPrice(stats.totalRevenue)}`,
+      value: formatPrice(stats.totalRevenue),
       subtitle: `${stats.completedOrders} سفارش تحویل شده`,
       icon: DollarSign,
       gradient: "from-green-500/10 to-green-500/5",
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
     {
       title: "رزروها",
       value: stats.totalBookings,
-      subtitle: `${stats.pendingBookings} در انتظار",
+      subtitle: `${stats.pendingBookings} در انتظار`,
       icon: Calendar,
       gradient: "from-purple-500/10 to-purple-500/5",
       iconBg: "bg-purple-500/20 text-purple-600 dark:text-purple-400",
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
     {
       title: "کاربران",
       value: stats.totalUsers,
-      subtitle: `${calculatePercentage(stats.totalBookings, stats.totalUsers)}% درگیر",
+      subtitle: `${calculatePercentage(stats.totalBookings, stats.totalUsers)}% درگیر`,
       icon: Users,
       gradient: "from-orange-500/10 to-orange-500/5",
       iconBg: "bg-orange-500/20 text-orange-600 dark:text-orange-400",
@@ -304,7 +304,7 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="text-right text-sm text-muted-foreground">
-            <p>آخرین بروزرسانی: همین الآن</p>
+            <p>آخرین بررسی‌ای: همین الآن</p>
             <p>وضعیت: ✅ سیستم فعال</p>
           </div>
         </div>
@@ -577,11 +577,11 @@ export default function AdminDashboard() {
               <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
               <div>
                 <p className="font-semibold text-green-700 dark:text-green-400">سیستم فعال و سالم</p>
-                <p className="text-sm text-green-600 dark:text-green-400/70">تمام سرویس‌ها درحال کار هستند</p>
+                <p className="text-sm text-green-600 dark:text-green-400/70">تمام سرویس‌ها در حال کار هستند</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" onClick={fetchDashboardData}>
-              بروزرسانی
+              بررسی‌ای
             </Button>
           </CardContent>
         </Card>
