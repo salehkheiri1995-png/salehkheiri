@@ -9,14 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Camera, X } from "lucide-react";
 
-// Sample data with id field
+// Sample data with proper images
 const portfolioSampleData = [
   {
     id: "1",
     title: "آرایش عروس لاکچری",
     category: "makeup",
     description: "آرایش مدرن و الگان برای عروسی",
-    image_url: "https://images.unsplash.com/photo-1607746882042-f3978991f23e?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1607746882042-f3978991f23e?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 1,
     is_active: true,
   },
@@ -25,7 +25,7 @@ const portfolioSampleData = [
     title: "رنگ و مو طبیعی",
     category: "hair",
     description: "سبک مو زنانه مدرن",
-    image_url: "https://images.unsplash.com/photo-1562599810-d0d1c27c9ae5?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1562599810-d0d1c27c9ae5?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 2,
     is_active: true,
   },
@@ -34,7 +34,7 @@ const portfolioSampleData = [
     title: "طراحی ناخن ژله‌ای",
     category: "nail",
     description: "رنگ های مختلف و طرح های جدید",
-    image_url: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 3,
     is_active: true,
   },
@@ -43,7 +43,7 @@ const portfolioSampleData = [
     title: "درمان پوست صورت",
     category: "skin",
     description: "تمیزکاری و درمان پوست حساس",
-    image_url: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 4,
     is_active: true,
   },
@@ -52,7 +52,7 @@ const portfolioSampleData = [
     title: "موج و فر طبیعی",
     category: "hair",
     description: "بوکل های صحیح و طبیعی",
-    image_url: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 5,
     is_active: true,
   },
@@ -61,7 +61,7 @@ const portfolioSampleData = [
     title: "آرایش شام برای مهمانی",
     category: "makeup",
     description: "آرایش درخشان برای شب",
-    image_url: "https://images.unsplash.com/photo-1529148482759-b3997e4ea767?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1529148482759-b3997e4ea767?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 6,
     is_active: true,
   },
@@ -70,7 +70,7 @@ const portfolioSampleData = [
     title: "طراحی ناخن مینیمالیست",
     category: "nail",
     description: "طرح ساده و شیک",
-    image_url: "https://images.unsplash.com/photo-1610992015732-2449ec28227c?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1610992015732-2449ec28227c?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 7,
     is_active: true,
   },
@@ -79,7 +79,7 @@ const portfolioSampleData = [
     title: "بلیچ و رنگ مو",
     category: "hair",
     description: "تبدیل رنگ مو به سایه‌های روشن",
-    image_url: "https://images.unsplash.com/photo-1563458500-4b20c6cb4c9b?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1563458500-4b20c6cb4c9b?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 8,
     is_active: true,
   },
@@ -88,7 +88,7 @@ const portfolioSampleData = [
     title: "پاکسازی و مراقبت پوست",
     category: "skin",
     description: "پروتکل مراقبت کامل پوست",
-    image_url: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 9,
     is_active: true,
   },
@@ -97,7 +97,7 @@ const portfolioSampleData = [
     title: "آرایش روزمره طبیعی",
     category: "makeup",
     description: "آرایش روزانه برای محیط کار",
-    image_url: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 10,
     is_active: true,
   },
@@ -106,7 +106,7 @@ const portfolioSampleData = [
     title: "ناخن کریستالی براق",
     category: "nail",
     description: "ناخن براق و درخشان",
-    image_url: "https://images.unsplash.com/photo-1600797260371-e80fcca6a472?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1600797260371-e80fcca6a472?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 11,
     is_active: true,
   },
@@ -115,7 +115,7 @@ const portfolioSampleData = [
     title: "اصلاح ابرو حرفه‌ای",
     category: "makeup",
     description: "فرم‌دهی و رنگ ابرو",
-    image_url: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400&h=400&fit=crop",
+    image_url: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
     order_index: 12,
     is_active: true,
   },
@@ -221,19 +221,23 @@ export default function Portfolio() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ delay: index * 0.05 }}
-                    className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer"
+                    className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer bg-muted"
                     onClick={() => setSelectedImage(item.image_url)}
                   >
                     <img
-                      src={item.image_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=400&fit=crop"}
+                      src={item.image_url}
                       alt={item.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-4.0.3&w=500&h=500&fit=crop";
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="absolute bottom-0 left-0 right-0 p-4">
-                        <h3 className="text-white font-bold">{item.title}</h3>
+                        <h3 className="text-white font-bold text-sm">{item.title}</h3>
                         {item.description && (
-                          <p className="text-white/80 text-sm line-clamp-2">{item.description}</p>
+                          <p className="text-white/80 text-xs line-clamp-2">{item.description}</p>
                         )}
                       </div>
                     </div>
