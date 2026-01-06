@@ -1,26 +1,15 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen, LayoutGrid, List, FileSpreadsheet, Zap, TrendingUp, BarChart3, DollarSign } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MultiImageUpload } from "@/components/admin/MultiImageUpload";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Course {
   id: string;
@@ -43,29 +32,12 @@ export default function AdminCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [levelFilter, setLevelFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState('newest');
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    image_url: "",
-    gallery_images: [] as string[],
-    price: 0,
-    original_price: 0,
-    duration_hours: 0,
-    instructor_name: "",
-    level: "مبتدی",
-    course_type: "ویدیویی",
-    is_active: true,
-    is_new: false,
-  });
-  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -89,60 +61,6 @@ export default function AdminCourses() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-
-    const submitData = {
-      ...formData,
-      original_price: formData.original_price || null,
-    };
-
-    try {
-      if (editingCourse) {
-        const { error } = await supabase
-          .from("courses")
-          .update(submitData)
-          .eq("id", editingCourse.id);
-
-        if (error) throw error;
-        toast({ title: "موفق", description: "دوره ویرایش شد" });
-      } else {
-        const { error } = await supabase.from("courses").insert([submitData]);
-        if (error) throw error;
-        toast({ title: "موفق", description: "دوره اضافه شد" });
-      }
-
-      setIsDialogOpen(false);
-      setEditingCourse(null);
-      resetForm();
-      fetchCourses();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "خطا", description: error.message });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleEdit = (course: Course) => {
-    setEditingCourse(course);
-    setFormData({
-      title: course.title,
-      description: course.description || "",
-      image_url: course.image_url || "",
-      gallery_images: course.gallery_images || [],
-      price: course.price,
-      original_price: course.original_price || 0,
-      duration_hours: course.duration_hours || 0,
-      instructor_name: course.instructor_name || "",
-      level: course.level || "مبتدی",
-      course_type: course.course_type || "ویدیویی",
-      is_active: course.is_active,
-      is_new: course.is_new || false,
-    });
-    setIsDialogOpen(true);
-  };
-
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase.from("courses").delete().eq("id", id);
@@ -153,23 +71,6 @@ export default function AdminCourses() {
     } catch (error: any) {
       toast({ variant: "destructive", title: "خطا", description: error.message });
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      image_url: "",
-      gallery_images: [],
-      price: 0,
-      original_price: 0,
-      duration_hours: 0,
-      instructor_name: "",
-      level: "مبتدی",
-      course_type: "ویدیویی",
-      is_active: true,
-      is_new: false,
-    });
   };
 
   const filterCourses = (courses: Course[]) => {
@@ -222,120 +123,12 @@ export default function AdminCourses() {
             {filteredCourses.length} دوره از {courses.length} نمایش داده می‌شود
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 h-11" onClick={() => { setEditingCourse(null); resetForm(); }}>
-              <Plus className="w-4 h-4" />
-              افزودن دوره
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingCourse ? "ویرایش دوره" : "افزودن دوره جدید"}</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label>تصاویر دوره</Label>
-                <MultiImageUpload
-                  featuredImage={formData.image_url}
-                  galleryImages={formData.gallery_images}
-                  onFeaturedChange={(url) => setFormData({ ...formData, image_url: url })}
-                  onGalleryChange={(urls) => setFormData({ ...formData, gallery_images: urls })}
-                  folder="courses"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>عنوان دوره</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>توضیحات</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>مدرس</Label>
-                  <Input
-                    value={formData.instructor_name}
-                    onChange={(e) => setFormData({ ...formData, instructor_name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>مدت (ساعت)</Label>
-                  <Input
-                    type="number"
-                    value={formData.duration_hours}
-                    onChange={(e) => setFormData({ ...formData, duration_hours: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>قیمت</Label>
-                  <Input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>قیمت اصلی</Label>
-                  <Input
-                    type="number"
-                    value={formData.original_price}
-                    onChange={(e) => setFormData({ ...formData, original_price: Number(e.target.value) })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>سطح</Label>
-                  <Select value={formData.level} onValueChange={(v) => setFormData({ ...formData, level: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="مبتدی">مبتدی</SelectItem>
-                      <SelectItem value="متوسط">متوسط</SelectItem>
-                      <SelectItem value="پیشرفته">پیشرفته</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>نوع دوره</Label>
-                  <Select value={formData.course_type} onValueChange={(v) => setFormData({ ...formData, course_type: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ویدیویی">ویدیویی</SelectItem>
-                      <SelectItem value="حضوری">حضوری</SelectItem>
-                      <SelectItem value="ترکیبی">ترکیبی</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="flex items-center gap-8">
-                <div className="flex items-center gap-2">
-                  <Switch checked={formData.is_active} onCheckedChange={(c) => setFormData({ ...formData, is_active: c })} />
-                  <Label>فعال</Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch checked={formData.is_new} onCheckedChange={(c) => setFormData({ ...formData, is_new: c })} />
-                  <Label>جدید</Label>
-                </div>
-              </div>
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "ذخیره"}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Link to="/admin/courses/new">
+          <Button className="gap-2 h-11">
+            <Plus className="w-4 h-4" />
+            افزودن دوره
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Cards */}
@@ -470,9 +263,11 @@ export default function AdminCourses() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>عملیات</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => handleEdit(course)} className="gap-2">
-                        <Pencil className="w-4 h-4" />
-                        ویرایش
+                      <DropdownMenuItem asChild>
+                        <Link to={`/admin/courses/${course.id}/edit`} className="gap-2">
+                          <Pencil className="w-4 h-4" />
+                          ویرایش
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
                         <Link to={`/admin/courses/${course.id}/lessons`} className="gap-2">
@@ -571,9 +366,11 @@ export default function AdminCourses() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>عملیات</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => handleEdit(course)} className="gap-2">
-                          <Pencil className="w-4 h-4" />
-                          ویرایش
+                        <DropdownMenuItem asChild>
+                          <Link to={`/admin/courses/${course.id}/edit`} className="gap-2">
+                            <Pencil className="w-4 h-4" />
+                            ویرایش
+                          </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                           <Link to={`/admin/courses/${course.id}/lessons`} className="gap-2">
@@ -602,7 +399,7 @@ export default function AdminCourses() {
           <AlertDialogHeader>
             <AlertDialogTitle>آيا مطمئن هستید؟</AlertDialogTitle>
             <AlertDialogDescription>
-              اين دوره به طور رايگان حذف خواهد شد. اين عمليات قابل بازگشت نیست.
+              اين دوره به طور رايگان حذف خواهند شد. اين عمليات قابل بازگشت نیست.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
