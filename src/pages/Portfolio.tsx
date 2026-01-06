@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,22 +8,44 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Camera, X } from "lucide-react";
+import { portfolioSampleData } from "@/data/portfolioData";
 
 export default function Portfolio() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [useSampleData, setUseSampleData] = useState(false);
 
-  const { data: portfolioItems, isLoading } = useQuery({
+  const { data: portfolioItems, isLoading, error } = useQuery({
     queryKey: ["portfolio"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("portfolio")
-        .select("*")
-        .eq("is_active", true)
-        .order("order_index");
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from("portfolio")
+          .select("*")
+          .eq("is_active", true)
+          .order("order_index");
+        
+        if (error) {
+          console.error("Portfolio query error:", error);
+          // Use sample data if query fails
+          setUseSampleData(true);
+          return portfolioSampleData;
+        }
+        
+        // If no data from database, use sample data
+        if (!data || data.length === 0) {
+          setUseSampleData(true);
+          return portfolioSampleData;
+        }
+        
+        return data;
+      } catch (err) {
+        console.error("Portfolio fetch error:", err);
+        setUseSampleData(true);
+        return portfolioSampleData;
+      }
     },
+    retry: false,
   });
 
   const categories = [
@@ -56,6 +78,11 @@ export default function Portfolio() {
             <p className="text-muted-foreground max-w-2xl mx-auto">
               مجموعه‌ای از بهترین کارهای انجام شده توسط متخصصین ما
             </p>
+            {useSampleData && (
+              <p className="text-sm text-amber-600 mt-2">
+                ℹ️ نمونه داده‌های نمایشی
+              </p>
+            )}
           </motion.div>
 
           {/* Category Filter */}
@@ -95,7 +122,7 @@ export default function Portfolio() {
               <AnimatePresence>
                 {filteredItems?.map((item, index) => (
                   <motion.div
-                    key={item.id}
+                    key={item.id || `${item.category}-${index}`}
                     layout
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
