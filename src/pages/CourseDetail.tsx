@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Navigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -8,8 +8,6 @@ import {
   Star, 
   CheckCircle, 
   Lock,
-  ChevronDown,
-  ChevronUp,
   BookOpen
 } from "lucide-react";
 import { VideoPlayer } from "@/components/VideoPlayer";
@@ -19,151 +17,119 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { coursesService, lessonsService, enrollmentsService, Course, Lesson } from "@/services/coursesService";
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<string[]>(["all"]);
+  const [enrollment, setEnrollment] = useState<any>(null);
+  const [progressData, setProgressData] = useState<any[]>([]);
 
-  // Fetch course details
-  const { data: course, isLoading: courseLoading } = useQuery({
-    queryKey: ["course", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
+  useEffect(() => {
+    if (!id) return;
 
-  // Fetch lessons
-  const { data: lessons } = useQuery({
-    queryKey: ["course-lessons", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("course_lessons")
-        .select("*")
-        .eq("course_id", id)
-        .order("order_index");
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
+    try {
+      setLoading(true);
+      
+      // دریافت دوره
+      const courseData = coursesService.getCourse(id);
+      if (!courseData) {
+        setLoading(false);
+        return;
+      }
+      setCourse(courseData);
 
-  // Check enrollment
-  const { data: enrollment } = useQuery({
-    queryKey: ["enrollment", id, user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
-      const { data, error } = await supabase
-        .from("course_enrollments")
-        .select("*")
-        .eq("course_id", id)
-        .eq("user_id", user.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id && !!user?.id,
-  });
+      // دریافت دروس
+      const lessonsData = lessonsService.getLessonsByCourse(id);
+      setLessons(lessonsData);
+      if (lessonsData.length > 0) {
+        setCurrentLessonId(lessonsData[0].id);
+      }
 
-  // Fetch lesson progress
-  const { data: progressData } = useQuery({
-    queryKey: ["lesson-progress", id, user?.id],
-    queryFn: async () => {
-      if (!user?.id || !lessons) return [];
-      const lessonIds = lessons.map(l => l.id);
-      const { data, error } = await supabase
-        .from("lesson_progress")
-        .select("*")
-        .eq("user_id", user.id)
-        .in("lesson_id", lessonIds);
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user?.id && !!lessons,
-  });
+      // بررسی ثبت‌نام
+      if (user?.id) {
+        const enrollmentData = enrollmentsService.getEnrollmentsByStudent(user.id)
+          .find(e => e.course_id === id);
+        setEnrollment(enrollmentData || null);
+      }
+    } catch (error) {
+      console.error('خطا در دریافت اطلاعات دوره:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [id, user]);
 
-  // Enroll mutation
-  const enrollMutation = useMutation({
-    mutationFn: async () => {
-      if (!user?.id || !id) throw new Error("Not authenticated");
-      const { error } = await supabase.from("course_enrollments").insert({
-        user_id: user.id,
-        course_id: id,
+  const handleEnroll = () => {
+    if (!user?.id || !id) {
+      toast({
+        title: "خطا",
+        description: "ابتدا وارد شوید",
+        variant: "destructive",
       });
-      if (error) throw error;
-    },
-    onSuccess: () => {
+      return;
+    }
+
+    try {
+      const newEnrollment = enrollmentsService.enrollStudent(
+        id,
+        user.id,
+        user.email || "",
+        user.user_metadata?.name || "دانشجو",
+        ""
+      );
+      setEnrollment(newEnrollment);
       toast({
         title: "ثبت‌نام موفق!",
         description: "شما با موفقیت در این دوره ثبت‌نام کردید.",
       });
-      queryClient.invalidateQueries({ queryKey: ["enrollment"] });
-    },
-    onError: () => {
+    } catch (error) {
       toast({
         title: "خطا",
         description: "مشکلی در ثبت‌نام پیش آمد.",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
-  // Update lesson progress mutation
-  const updateProgress = useMutation({
-    mutationFn: async ({ lessonId, completed }: { lessonId: string; completed: boolean }) => {
-      if (!user?.id) throw new Error("Not authenticated");
-      const { error } = await supabase
-        .from("lesson_progress")
-        .upsert({
-          user_id: user.id,
-          lesson_id: lessonId,
-          completed,
-          completed_at: completed ? new Date().toISOString() : null,
-        }, {
-          onConflict: "user_id,lesson_id"
-        });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["lesson-progress"] });
-    },
-  });
+  const handleLessonProgress = (lessonId: string, completed: boolean) => {
+    if (!enrollment) return;
+    
+    try {
+      enrollmentsService.updateProgress(enrollment.id, lessons.length, completed ? 100 : 0);
+      
+      // بروز رسانی progress
+      const updatedEnrollment = { ...enrollment, progress: completed ? 100 : 0 };
+      setEnrollment(updatedEnrollment);
+      
+      toast({
+        title: "موفق",
+        description: completed ? "درس علامت‌گذاری شد" : "علامت‌گذاری لغو شد",
+      });
+    } catch (error) {
+      console.error('خطا:', error);
+    }
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
 
-  const isLessonAccessible = (lesson: any) => {
+  const isLessonAccessible = (lesson: Lesson) => {
     return lesson.is_free || !!enrollment;
   };
 
-  const isLessonCompleted = (lessonId: string) => {
-    return progressData?.some(p => p.lesson_id === lessonId && p.completed);
-  };
+  const currentLesson = lessons.find(l => l.id === currentLessonId) || lessons[0];
 
-  const completedCount = progressData?.filter(p => p.completed).length || 0;
-  const totalLessons = lessons?.length || 0;
-  const progressPercent = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
-
-  const currentLesson = lessons?.find(l => l.id === currentLessonId) || lessons?.[0];
-
-  if (courseLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -209,8 +175,8 @@ export default function CourseDetail() {
                     videoUrl={currentLesson.video_url}
                     poster={course.image_url || undefined}
                     onEnded={() => {
-                      if (currentLesson) {
-                        updateProgress.mutate({ lessonId: currentLesson.id, completed: true });
+                      if (currentLesson && enrollment) {
+                        handleLessonProgress(currentLesson.id, true);
                       }
                     }}
                   />
@@ -246,21 +212,12 @@ export default function CourseDetail() {
                         <p className="text-sm text-muted-foreground">{currentLesson.description}</p>
                       </div>
                       <Button
-                        variant={isLessonCompleted(currentLesson.id) ? "secondary" : "default"}
+                        variant="secondary"
                         size="sm"
-                        onClick={() => updateProgress.mutate({ 
-                          lessonId: currentLesson.id, 
-                          completed: !isLessonCompleted(currentLesson.id) 
-                        })}
+                        onClick={() => handleLessonProgress(currentLesson.id, true)}
                       >
-                        {isLessonCompleted(currentLesson.id) ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 ml-1" />
-                            تکمیل شده
-                          </>
-                        ) : (
-                          "علامت‌گذاری به عنوان تکمیل"
-                        )}
+                        <CheckCircle className="w-4 h-4 ml-1" />
+                        تكمیل شده
                       </Button>
                     </div>
                   </CardContent>
@@ -285,10 +242,9 @@ export default function CourseDetail() {
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-accent fill-accent" />
-                      {Number(course.rating).toFixed(1)}
+                      {(course.students_count > 0 ? 4.5 : 0).toFixed(1)}
                     </span>
                     <Badge variant="secondary">{course.level}</Badge>
-                    <Badge variant="outline">{course.course_type}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -298,12 +254,12 @@ export default function CourseDetail() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <BookOpen className="w-5 h-5" />
-                    سرفصل‌ها ({lessons?.length || 0} درس)
+                    سرفصل‌ها ({lessons.length} درس)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="divide-y divide-border">
-                    {lessons?.map((lesson, index) => (
+                    {lessons.map((lesson, index) => (
                       <button
                         key={lesson.id}
                         onClick={() => {
@@ -325,13 +281,9 @@ export default function CourseDetail() {
                       >
                         <div className={cn(
                           "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                          isLessonCompleted(lesson.id) 
-                            ? "bg-green-500 text-white" 
-                            : "bg-muted text-muted-foreground"
+                          "bg-muted text-muted-foreground"
                         )}>
-                          {isLessonCompleted(lesson.id) ? (
-                            <CheckCircle className="w-5 h-5" />
-                          ) : isLessonAccessible(lesson) ? (
+                          {isLessonAccessible(lesson) ? (
                             <Play className="w-4 h-4" />
                           ) : (
                             <Lock className="w-4 h-4" />
@@ -352,7 +304,7 @@ export default function CourseDetail() {
                         </span>
                       </button>
                     ))}
-                    {(!lessons || lessons.length === 0) && (
+                    {lessons.length === 0 && (
                       <div className="p-8 text-center text-muted-foreground">
                         هنوز درسی اضافه نشده است
                       </div>
@@ -364,7 +316,6 @@ export default function CourseDetail() {
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Enroll Card */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -376,13 +327,13 @@ export default function CourseDetail() {
                     <div className="mb-6">
                       <div className="flex items-baseline gap-2 mb-2">
                         <span className="text-3xl font-bold text-primary">
-                          {formatPrice(Number(course.price))}
+                          {formatPrice(course.price)}
                         </span>
                         <span className="text-muted-foreground">تومان</span>
                       </div>
-                      {course.original_price && (
+                      {course.original_price && course.original_price > course.price && (
                         <span className="text-muted-foreground line-through">
-                          {formatPrice(Number(course.original_price))} تومان
+                          {formatPrice(course.original_price)} تومان
                         </span>
                       )}
                     </div>
@@ -393,19 +344,16 @@ export default function CourseDetail() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium">پیشرفت شما</span>
                           <span className="text-sm text-muted-foreground">
-                            {completedCount} از {totalLessons}
+                            {enrollment.progress}%
                           </span>
                         </div>
-                        <Progress value={progressPercent} className="h-2" />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {progressPercent}% تکمیل شده
-                        </p>
+                        <Progress value={enrollment.progress} className="h-2" />
                       </div>
                     )}
 
                     {/* Action Button */}
                     {enrollment ? (
-                      <Button className="w-full" size="lg" onClick={() => setCurrentLessonId(lessons?.[0]?.id || null)}>
+                      <Button className="w-full" size="lg" onClick={() => setCurrentLessonId(lessons[0]?.id || null)}>
                         <Play className="w-5 h-5 ml-2" />
                         ادامه یادگیری
                       </Button>
@@ -413,8 +361,7 @@ export default function CourseDetail() {
                       <Button 
                         className="w-full" 
                         size="lg"
-                        onClick={() => enrollMutation.mutate()}
-                        disabled={enrollMutation.isPending}
+                        onClick={handleEnroll}
                       >
                         ثبت‌نام در دوره
                       </Button>
@@ -432,7 +379,7 @@ export default function CourseDetail() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">تعداد دروس</span>
-                        <span className="font-medium">{lessons?.length || 0} درس</span>
+                        <span className="font-medium">{lessons.length} درس</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">مدت دوره</span>
