@@ -4,29 +4,12 @@ import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen, LayoutGr
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-interface Course {
-  id: string;
-  title: string;
-  description: string | null;
-  image_url: string | null;
-  gallery_images: string[] | null;
-  price: number;
-  original_price: number | null;
-  duration_hours: number | null;
-  instructor_name: string | null;
-  level: string | null;
-  course_type: string | null;
-  students_count: number | null;
-  is_active: boolean;
-  is_new: boolean;
-}
+import { coursesService, Course } from "@/services/coursesService";
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -44,30 +27,29 @@ export default function AdminCourses() {
     fetchCourses();
   }, []);
 
-  const fetchCourses = async () => {
+  const fetchCourses = () => {
     try {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setCourses(data || []);
+      setLoading(true);
+      const data = coursesService.getAllCourses();
+      setCourses(data);
     } catch (error) {
-      console.error("خطا در دریافت دوره‌ها:", error);
+      console.error('خطا در دریافت دوره‌ها:', error);
       toast({ variant: "destructive", title: "خطا", description: "خطا در بارگذاری دوره‌ها" });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     try {
-      const { error } = await supabase.from("courses").delete().eq("id", id);
-      if (error) throw error;
-      toast({ title: "موفق", description: "دوره حذف شد" });
-      fetchCourses();
-      setDeleteConfirmId(null);
+      const success = coursesService.deleteCourse(id);
+      if (success) {
+        toast({ title: "موفق", description: "دوره حذف شد" });
+        fetchCourses();
+        setDeleteConfirmId(null);
+      } else {
+        toast({ variant: "destructive", title: "خطا", description: "دوره پیدا نشد" });
+      }
     } catch (error: any) {
       toast({ variant: "destructive", title: "خطا", description: error.message });
     }
@@ -172,7 +154,7 @@ export default function AdminCourses() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="relative lg:col-span-2">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="جستجو بر اساس نام یا مدرس..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-10" />
+            <Input placeholder="جستجو بر اساس نام..." value={search} onChange={(e) => setSearch(e.target.value)} className="pr-10" />
           </div>
           <Select value={levelFilter} onValueChange={setLevelFilter}>
             <SelectTrigger>
@@ -229,6 +211,11 @@ export default function AdminCourses() {
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
+      ) : filteredCourses.length === 0 ? (
+        <div className="text-center py-16 bg-card rounded-2xl border border-border">
+          <BookOpen className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+          <p className="text-muted-foreground text-lg">دورهای برابری با فیلتر پیدا نشد</p>
+        </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((course, index) => (
@@ -272,7 +259,7 @@ export default function AdminCourses() {
                       <DropdownMenuItem asChild>
                         <Link to={`/admin/courses/${course.id}/lessons`} className="gap-2">
                           <BookOpen className="w-4 h-4" />
-                          مدیریت دروس
+                          دروس
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
@@ -302,14 +289,6 @@ export default function AdminCourses() {
                   <div>
                     <span className="text-2xl font-bold text-primary">{formatPrice(course.price)}</span>
                     <span className="text-xs text-muted-foreground ml-1">تومان</span>
-                    {course.original_price && course.original_price > course.price && (
-                      <>
-                        <span className="text-xs text-muted-foreground line-through mr-2">{formatPrice(course.original_price)}</span>
-                        <Badge variant="destructive" className="ml-2">
-                          {Math.round(((course.original_price - course.price) / course.original_price) * 100)}%
-                        </Badge>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
@@ -343,12 +322,8 @@ export default function AdminCourses() {
                     </div>
                   </td>
                   <td className="p-4 text-muted-foreground">{course.instructor_name || "-"}</td>
-                  <td className="p-4 text-center">
-                    <Badge variant="outline">{course.level}</Badge>
-                  </td>
-                  <td className="p-4 text-center">
-                    <Badge variant="secondary">{course.course_type}</Badge>
-                  </td>
+                  <td className="p-4 text-center"><Badge variant="outline">{course.level}</Badge></td>
+                  <td className="p-4 text-center"><Badge variant="secondary">{course.course_type}</Badge></td>
                   <td className="p-4 text-center font-bold text-primary">{formatPrice(course.price)}</td>
                   <td className="p-4 text-center">{course.students_count || 0}</td>
                   <td className="p-4 text-center">
@@ -399,7 +374,7 @@ export default function AdminCourses() {
           <AlertDialogHeader>
             <AlertDialogTitle>آيا مطمئن هستید؟</AlertDialogTitle>
             <AlertDialogDescription>
-              اين دوره به طور رايگان حذف خواهند شد. اين عمليات قابل بازگشت نیست.
+              اين دوره به طور رايگان حذف خواهند شد.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
