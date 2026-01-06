@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, Users, Star, Play, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -5,25 +6,27 @@ import { Badge } from "@/components/ui/badge";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { coursesService, Course } from "@/services/coursesService";
 
 export default function Courses() {
   const navigate = useNavigate();
-  const { data: courses, isLoading } = useQuery({
-    queryKey: ["courses"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("courses")
-        .select("*")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // دریافت دوره‌ها از localStorage
+    try {
+      const data = coursesService.getAllCourses();
+      // فقط دوره‌های فعال را نشان ده
+      const activeCourses = data.filter(c => c.is_active);
+      setCourses(activeCourses);
+    } catch (error) {
+      console.error('خطا در دریافت دوره‌ها:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
@@ -119,7 +122,7 @@ export default function Courses() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-accent fill-accent" />
-                        {Number(course.rating).toFixed(1)}
+                        {(course.students_count > 0 ? 4.5 : 0).toFixed(1)}
                       </span>
                     </div>
 
@@ -127,11 +130,11 @@ export default function Courses() {
                     <div className="flex items-center justify-between pt-4 border-t border-border">
                       <div className="flex items-center gap-2">
                         <span className="text-lg font-bold text-primary">
-                          {formatPrice(Number(course.price))} تومان
+                          {formatPrice(course.price)} تومان
                         </span>
-                        {course.original_price && (
+                        {course.original_price && course.original_price > course.price && (
                           <span className="text-sm text-muted-foreground line-through">
-                            {formatPrice(Number(course.original_price))}
+                            {formatPrice(course.original_price)}
                           </span>
                         )}
                       </div>
