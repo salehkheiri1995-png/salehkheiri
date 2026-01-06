@@ -202,30 +202,30 @@ export const UsersTable = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="w-full space-y-6 p-4 md:p-6">
       {/* هدر و فیلترها */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
+        <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">مدیریت کاربران</h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             مشاهده و مدیریت کاربران سیستم
           </p>
         </div>
-        <Button>
-          <UserPlus className="mr-2 h-4 w-4" />
+        <Button className="w-full md:w-auto">
+          <UserPlus className="ml-2 h-4 w-4" />
           افزودن کاربر جدید
         </Button>
       </div>
 
       {/* فیلترها و جستجو */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center">
         <div className="relative flex-1">
-          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="جستجو بر اساس نام یا ایمیل..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pr-10"
+            className="pl-10"
           />
         </div>
         <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -251,156 +251,174 @@ export const UsersTable = () => {
       </div>
 
       {/* جدول کاربران */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-right">نام کاربر</TableHead>
-              <TableHead className="text-right">ایمیل</TableHead>
-              <TableHead className="text-right">نقش</TableHead>
-              <TableHead className="text-right">وضعیت</TableHead>
-              <TableHead className="text-right">تاریخ عضویت</TableHead>
-              <TableHead className="text-left">عملیات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {currentUsers.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">
-                  کاربری یافت نشد.
-                </TableCell>
+      <div className="rounded-lg border bg-card shadow-sm">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-right font-semibold">نام کاربر</TableHead>
+                <TableHead className="text-right font-semibold">ایمیل</TableHead>
+                <TableHead className="text-center font-semibold">نقش</TableHead>
+                <TableHead className="text-center font-semibold">وضعیت</TableHead>
+                <TableHead className="text-center font-semibold">تاریخ عضویت</TableHead>
+                <TableHead className="text-center font-semibold">عملیات</TableHead>
               </TableRow>
-            ) : (
-              currentUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        {user.name.charAt(0)}
-                      </div>
-                      <span>{user.name}</span>
+            </TableHeader>
+            <TableBody>
+              {currentUsers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center">
+                    <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <p className="text-lg font-medium">کاربری یافت نشد</p>
+                      <p className="text-sm">فیلترهای خود را تغییر دهید یا کاربر جدیدی اضافه کنید.</p>
                     </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {user.email}
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={user.role === "admin" ? "default" : "secondary"}
-                    >
-                      {user.role === "admin" ? "مدیر" : "کاربر"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.status === "active" ? "success" : "destructive"
-                      }
-                      className={
-                        user.status === "active"
-                          ? "bg-green-100 text-green-800 hover:bg-green-200"
-                          : ""
-                      }
-                    >
-                      {user.status === "active" ? "فعال" : "غیرفعال"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(user.joinedAt).toLocaleDateString("fa-IR")}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openEditDialog(user)}>
-                          <Edit className="ml-2 h-4 w-4" />
-                          ویرایش اطلاعات
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleChangeRole(
-                              user.id,
-                              user.role === "admin" ? "user" : "admin"
-                            )
-                          }
-                        >
-                          <Shield className="ml-2 h-4 w-4" />
-                          تغییر به {user.role === "admin" ? "کاربر" : "مدیر"}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleChangeStatus(
-                              user.id,
-                              user.status === "active" ? "inactive" : "active"
-                            )
-                          }
-                        >
-                          {user.status === "active" ? (
-                            <>
-                              <Ban className="ml-2 h-4 w-4" />
-                              غیرفعال کردن
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="ml-2 h-4 w-4" />
-                              فعال کردن
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => setDeleteUserId(user.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="ml-2 h-4 w-4" />
-                          حذف کاربر
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                currentUsers.map((user) => (
+                  <TableRow key={user.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                          {user.name.charAt(0)}
+                        </div>
+                        <span className="truncate">{user.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <span className="truncate block max-w-[200px]">{user.email}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant={user.role === "admin" ? "default" : "secondary"}
+                        className="min-w-[60px]"
+                      >
+                        {user.role === "admin" ? "مدیر" : "کاربر"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge
+                        variant={
+                          user.status === "active" ? "default" : "destructive"
+                        }
+                        className={
+                          user.status === "active"
+                            ? "min-w-[70px] bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-100"
+                            : "min-w-[70px]"
+                        }
+                      >
+                        {user.status === "active" ? "فعال" : "غیرفعال"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center text-muted-foreground">
+                      {new Date(user.joinedAt).toLocaleDateString("fa-IR")}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuLabel>عملیات</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => openEditDialog(user)}>
+                            <Edit className="ml-2 h-4 w-4" />
+                            <span>ویرایش اطلاعات</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleChangeRole(
+                                user.id,
+                                user.role === "admin" ? "user" : "admin"
+                              )
+                            }
+                          >
+                            <Shield className="ml-2 h-4 w-4" />
+                            <span>تغییر به {user.role === "admin" ? "کاربر" : "مدیر"}</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleChangeStatus(
+                                user.id,
+                                user.status === "active" ? "inactive" : "active"
+                              )
+                            }
+                          >
+                            {user.status === "active" ? (
+                              <>
+                                <Ban className="ml-2 h-4 w-4" />
+                                <span>غیرفعال کردن</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="ml-2 h-4 w-4" />
+                                <span>فعال کردن</span>
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => setDeleteUserId(user.id)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="ml-2 h-4 w-4" />
+                            <span>حذف کاربر</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* صفحه‌بندی */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
-            نمایش {startIndex + 1} تا {Math.min(endIndex, filteredUsers.length)}{" "}
-            از {filteredUsers.length} کاربر
+            نمایش <span className="font-medium">{startIndex + 1}</span> تا{" "}
+            <span className="font-medium">{Math.min(endIndex, filteredUsers.length)}</span> از{" "}
+            <span className="font-medium">{filteredUsers.length}</span> کاربر
           </p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
+              className="h-9"
             >
               قبلی
             </Button>
-            <div className="flex items-center gap-1">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (page) => (
+            <div className="flex flex-wrap items-center gap-1">
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                let pageNumber;
+                if (totalPages <= 5) {
+                  pageNumber = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNumber = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNumber = totalPages - 4 + i;
+                } else {
+                  pageNumber = currentPage - 2 + i;
+                }
+                return (
                   <Button
-                    key={page}
-                    variant={currentPage === page ? "default" : "outline"}
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setCurrentPage(page)}
-                    className="w-8"
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className="h-9 w-9"
                   >
-                    {page}
+                    {pageNumber}
                   </Button>
-                )
-              )}
+                );
+              })}
             </div>
             <Button
               variant="outline"
@@ -409,6 +427,7 @@ export const UsersTable = () => {
                 setCurrentPage((prev) => Math.min(totalPages, prev + 1))
               }
               disabled={currentPage === totalPages}
+              className="h-9"
             >
               بعدی
             </Button>
@@ -421,15 +440,15 @@ export const UsersTable = () => {
         open={deleteUserId !== null}
         onOpenChange={() => setDeleteUserId(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>آیا مطمئن هستید؟</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-right">
               این عملیات قابل بازگشت نیست. این کاربر به طور دائم از سیستم حذف
               خواهد شد.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
             <AlertDialogCancel>انصراف</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteUser}
@@ -443,27 +462,28 @@ export const UsersTable = () => {
 
       {/* دیالوگ ویرایش کاربر */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>ویرایش اطلاعات کاربر</DialogTitle>
-            <DialogDescription>
-              اطلاعات کاربر را ویرایش کنید و ذخیره کنید.
+            <DialogDescription className="text-right">
+              اطلاعات کاربر را ویرایش کرده و تغییرات را ذخیره کنید.
             </DialogDescription>
           </DialogHeader>
           {editUser && (
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-5 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">نام</Label>
+                <Label htmlFor="name" className="text-right">نام کاربر</Label>
                 <Input
                   id="name"
                   value={editUser.name}
                   onChange={(e) =>
                     setEditUser({ ...editUser, name: e.target.value })
                   }
+                  className="text-right"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">ایمیل</Label>
+                <Label htmlFor="email" className="text-right">ایمیل</Label>
                 <Input
                   id="email"
                   type="email"
@@ -471,10 +491,12 @@ export const UsersTable = () => {
                   onChange={(e) =>
                     setEditUser({ ...editUser, email: e.target.value })
                   }
+                  className="text-left"
+                  dir="ltr"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="role">نقش</Label>
+                <Label htmlFor="role" className="text-right">نقش</Label>
                 <Select
                   value={editUser.role}
                   onValueChange={(value: "admin" | "user") =>
@@ -491,7 +513,7 @@ export const UsersTable = () => {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="status">وضعیت</Label>
+                <Label htmlFor="status" className="text-right">وضعیت</Label>
                 <Select
                   value={editUser.status}
                   onValueChange={(value: "active" | "inactive") =>
@@ -509,7 +531,7 @@ export const UsersTable = () => {
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button
               variant="outline"
               onClick={() => setIsEditDialogOpen(false)}
