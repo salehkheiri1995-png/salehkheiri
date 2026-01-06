@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, User, ShoppingBag, Calendar, Sparkles } from "lucide-react";
+import { Menu, X, User, ShoppingBag, Calendar, Sparkles, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { supabase } from "@/integrations/supabase/client";
 
 const navLinks = [
   { href: "/", label: "خانه" },
@@ -20,10 +21,22 @@ const navLinks = [
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const { totalItems } = useCart();
   const { data: settings } = useSalonSettings();
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/");
+      setIsUserMenuOpen(false);
+    } catch (error) {
+      console.error("خطا در خروج:", error);
+    }
+  };
 
   return (
     <header className="fixed top-0 right-0 left-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
@@ -68,18 +81,58 @@ export function Header() {
               </Link>
             </Button>
             {user ? (
-              <>
-                {isAdmin && (
-                  <Button asChild variant="ghost" size="sm">
-                    <Link to="/admin">پنل مدیریت</Link>
-                  </Button>
-                )}
-                <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                  <Link to="/dashboard">
-                    <User className="w-5 h-5" />
-                  </Link>
-                </Button>
-              </>
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex items-center gap-2"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="text-sm font-medium hidden md:inline">
+                    {user.email?.split("@")[0] || "کاربر"}
+                  </span>
+                </button>
+                <AnimatePresence>
+                  {isUserMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute left-0 mt-2 w-48 bg-background border border-border rounded-lg shadow-lg"
+                    >
+                      <div className="p-4 border-b border-border">
+                        <p className="text-sm font-medium text-foreground truncate">{user.email}</p>
+                      </div>
+                      <div className="p-2 space-y-1">
+                        <Link
+                          to="/dashboard"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          <User className="w-4 h-4" />
+                          پنل کاربری
+                        </Link>
+                        {isAdmin && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          >
+                            <span className="text-xs">⚙️</span>
+                            پنل مدیریت
+                          </Link>
+                        )}
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 w-full px-4 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors mt-2 border-t border-border pt-3"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          خروج از حساب
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             ) : (
               <Button asChild variant="ghost" size="sm">
                 <Link to="/auth">ورود / ثبت‌نام</Link>
@@ -135,6 +188,18 @@ export function Header() {
                 >
                   پنل مدیریت
                 </Link>
+              )}
+              {user && (
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                  className="px-4 py-3 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 mt-2 border-t border-border pt-4"
+                >
+                  <LogOut className="w-4 h-4" />
+                  خروج از حساب
+                </button>
               )}
               <div className="flex gap-2 pt-4 border-t border-border mt-2">
                 <Button asChild variant="outline" className="flex-1 gap-2">
