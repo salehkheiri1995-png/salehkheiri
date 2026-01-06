@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Camera, X } from "lucide-react";
 
-// Sample data with proper images
+// Sample data with id field - fallback only
 const portfolioSampleData = [
   {
     id: "1",
@@ -135,15 +135,24 @@ export default function Portfolio() {
           .eq("is_active", true)
           .order("order_index");
         
-        if (error || !data || data.length === 0) {
+        // اگر Database خالی بود یا خطا داشت، از Sample Data استفاده کن
+        if (error) {
+          console.warn("Database fetch failed, using sample data", error);
           return portfolioSampleData;
         }
+        
+        if (!data || data.length === 0) {
+          console.info("No portfolio items in database, using sample data");
+          return portfolioSampleData;
+        }
+        
         return data;
       } catch (err) {
+        console.error("Portfolio fetch error:", err);
         return portfolioSampleData;
       }
     },
-    retry: false,
+    retry: 1,
   });
 
   const categories = [
