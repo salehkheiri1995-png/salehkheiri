@@ -1,35 +1,20 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { 
-  Users, 
   Search, 
-  ShoppingCart, 
-  Calendar, 
-  GraduationCap,
+  Trash2,
+  Edit2,
+  Plus,
   ChevronDown,
   ChevronUp,
-  UserPlus,
   Loader2,
-  Edit,
-  Trash2,
-  Filter
+  Users,
+  ShoppingCart,
+  Calendar,
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -59,114 +44,53 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { faIR } from "date-fns/locale";
 
-interface UserProfile {
+interface User {
   id: string;
   full_name: string | null;
   phone: string | null;
   created_at: string;
-}
-
-interface UserOrder {
-  id: string;
-  total: number;
-  status: string;
-  created_at: string;
-}
-
-interface UserBooking {
-  id: string;
-  booking_date: string;
-  booking_time: string;
-  status: string;
-  services?: { name: string } | null;
-}
-
-interface UserEnrollment {
-  id: string;
-  enrolled_at: string;
-  progress_percent: number | null;
-  courses?: { title: string } | null;
-}
-
-interface UserRole {
-  role: 'admin' | 'moderator' | 'user';
-}
-
-interface UserWithDetails extends UserProfile {
-  orders: UserOrder[];
-  bookings: UserBooking[];
-  enrollments: UserEnrollment[];
-  role: 'admin' | 'moderator' | 'user';
+  orders_count?: number;
+  bookings_count?: number;
+  enrollments_count?: number;
+  role?: 'admin' | 'moderator' | 'user';
 }
 
 const STATUS_LABELS: Record<string, string> = {
-  pending: "در انتظار",
-  processing: "در حال پردازش",
-  shipped: "ارسال شده",
-  delivered: "تحویل شده",
-  cancelled: "لغو شده",
-  confirmed: "تایید شده",
-  completed: "انجام شده",
-};
-
-const ROLE_LABELS: Record<string, string> = {
   admin: "ادمین",
   moderator: "مدیر محتوا",
   user: "کاربر عادی",
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-  moderator: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  user: "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-400",
+  admin: "bg-red-500/20 text-red-700 dark:text-red-400",
+  moderator: "bg-blue-500/20 text-blue-700 dark:text-blue-400",
+  user: "bg-gray-500/20 text-gray-700 dark:text-gray-400",
 };
 
-interface AddUserForm {
-  email: string;
-  password: string;
-  full_name: string;
-  phone: string;
-  role: 'user' | 'admin' | 'moderator';
-}
-
-interface EditUserForm {
-  full_name: string;
-  phone: string;
-  role: 'user' | 'admin' | 'moderator';
-}
-
 export default function AdminUsers() {
-  const [users, setUsers] = useState<UserWithDetails[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
-  
-  // Add user dialog
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [addingUser, setAddingUser] = useState(false);
-  const [formData, setFormData] = useState<AddUserForm>({
-    email: '',
-    password: '',
-    full_name: '',
-    phone: '',
-    role: 'user'
-  });
-  
-  // Edit user dialog
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<UserWithDetails | null>(null);
-  const [editFormData, setEditFormData] = useState<EditUserForm>({
-    full_name: '',
-    phone: '',
-    role: 'user'
-  });
-  const [updatingUser, setUpdatingUser] = useState(false);
-  
-  // Delete user dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<UserWithDetails | null>(null);
-  const [deletingUser, setDeletingUser] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+    full_name: "",
+    phone: "",
+    role: "user" as 'user' | 'admin' | 'moderator',
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    full_name: "",
+    phone: "",
+    role: "user" as 'user' | 'admin' | 'moderator',
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -174,226 +98,149 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      // Get all profiles
-      const { data: profiles, error: profilesError } = await supabase
+      setLoading(true);
+      const { data: profiles, error } = await supabase
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (profilesError) throw profilesError;
+      if (error) throw error;
 
-      // Get all user roles
-      const { data: roles, error: rolesError } = await supabase
+      // Fetch roles
+      const { data: rolesData } = await supabase
         .from("user_roles")
         .select("user_id, role");
 
-      if (rolesError) throw rolesError;
+      const roleMap = new Map<string, string>();
+      rolesData?.forEach((r) => roleMap.set(r.user_id, r.role));
 
-      // Create role map
-      const roleMap = new Map<string, 'admin' | 'moderator' | 'user'>();
-      roles?.forEach(r => {
-        roleMap.set(r.user_id, r.role as 'admin' | 'moderator' | 'user');
-      });
-
-      // For each profile, get their orders, bookings, and enrollments
-      const usersWithDetails = await Promise.all(
+      // Fetch counts for each user
+      const usersWithCounts = await Promise.all(
         (profiles || []).map(async (profile) => {
-          const [ordersRes, bookingsRes, enrollmentsRes] = await Promise.all([
-            supabase
-              .from("orders")
-              .select("id, total, status, created_at")
-              .eq("user_id", profile.id)
-              .order("created_at", { ascending: false })
-              .limit(5),
-            supabase
-              .from("bookings")
-              .select("id, booking_date, booking_time, status, services(name)")
-              .eq("user_id", profile.id)
-              .order("booking_date", { ascending: false })
-              .limit(5),
-            supabase
-              .from("course_enrollments")
-              .select("id, enrolled_at, progress_percent, courses(title)")
-              .eq("user_id", profile.id)
-              .order("enrolled_at", { ascending: false }),
+          const [{ count: ordersCount }, { count: bookingsCount }, { count: enrollmentsCount }] = await Promise.all([
+            supabase.from("orders").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
+            supabase.from("bookings").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
+            supabase.from("course_enrollments").select("id", { count: "exact", head: true }).eq("user_id", profile.id),
           ]);
 
           return {
             ...profile,
-            orders: ordersRes.data || [],
-            bookings: bookingsRes.data || [],
-            enrollments: enrollmentsRes.data || [],
-            role: roleMap.get(profile.id) || 'user',
+            orders_count: ordersCount || 0,
+            bookings_count: bookingsCount || 0,
+            enrollments_count: enrollmentsCount || 0,
+            role: roleMap.get(profile.id) || "user",
           };
         })
       );
 
-      setUsers(usersWithDetails);
+      setUsers(usersWithCounts);
     } catch (error) {
       console.error("Error fetching users:", error);
-      toast.error("خطا در دریافت کاربران");
+      toast.error("خطا در دریافت اطلاعات کاربران");
     } finally {
       setLoading(false);
     }
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("fa-IR").format(price);
-  };
-
-  const filteredUsers = users.filter((u) => {
-    const matchesSearch = u.full_name?.includes(search) || u.phone?.includes(search);
-    const matchesRole = roleFilter === "all" || u.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  const filteredUsers = users.filter(
+    (user) =>
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone?.includes(searchTerm)
+  );
 
   const handleAddUser = async () => {
     if (!formData.email || !formData.password) {
-      toast.error('ایمیل و رمز عبور الزامی است');
+      toast.error("ایمیل و رمز عبور الزامی هستند");
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('رمز عبور باید حداقل ۶ کاراکتر باشد');
-      return;
-    }
-
-    setAddingUser(true);
+    setIsSubmitting(true);
     try {
-      const response = await supabase.functions.invoke('create-user', {
-        body: {
-          email: formData.email,
-          password: formData.password,
-          full_name: formData.full_name || null,
-          phone: formData.phone || null,
-          role: formData.role
-        }
+      const response = await supabase.functions.invoke("create-user", {
+        body: formData,
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'خطا در ایجاد کاربر');
-      }
+      if (response.error) throw new Error(response.error.message);
 
-      if (response.data?.error) {
-        throw new Error(response.data.error);
-      }
-
-      toast.success('کاربر با موفقیت ایجاد شد');
+      toast.success("کاربر با موفقیت ایجاد شد");
       setAddDialogOpen(false);
-      setFormData({
-        email: '',
-        password: '',
-        full_name: '',
-        phone: '',
-        role: 'user'
-      });
+      setFormData({ email: "", password: "", full_name: "", phone: "", role: "user" });
       fetchUsers();
     } catch (error: any) {
-      console.error('Error creating user:', error);
-      toast.error(error.message || 'خطا در ایجاد کاربر');
+      toast.error(error.message || "خطا در ایجاد کاربر");
     } finally {
-      setAddingUser(false);
+      setIsSubmitting(false);
     }
   };
 
-  const openEditDialog = (user: UserWithDetails) => {
-    setEditingUser(user);
-    setEditFormData({
-      full_name: user.full_name || '',
-      phone: user.phone || '',
-      role: user.role
-    });
-    setEditDialogOpen(true);
-  };
+  const handleEditUser = async () => {
+    if (!selectedUser) return;
 
-  const handleUpdateUser = async () => {
-    if (!editingUser) return;
-
-    setUpdatingUser(true);
+    setIsSubmitting(true);
     try {
-      const response = await supabase.functions.invoke('manage-user', {
+      const response = await supabase.functions.invoke("manage-user", {
         body: {
-          action: 'update',
-          user_id: editingUser.id,
-          full_name: editFormData.full_name || null,
-          phone: editFormData.phone || null,
-          role: editFormData.role
-        }
+          action: "update",
+          user_id: selectedUser.id,
+          ...editFormData,
+        },
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'خطا در به‌روزرسانی کاربر');
-      }
+      if (response.error) throw new Error(response.error.message);
 
-      if (response.data?.error) {
-        throw new Error(response.data.error);
-      }
-
-      toast.success('کاربر با موفقیت به‌روزرسانی شد');
+      toast.success("کاربر با موفقیت به‌روزرسانی شد");
       setEditDialogOpen(false);
-      setEditingUser(null);
+      setSelectedUser(null);
       fetchUsers();
     } catch (error: any) {
-      console.error('Error updating user:', error);
-      toast.error(error.message || 'خطا در به‌روزرسانی کاربر');
+      toast.error(error.message || "خطا در به‌روزرسانی کاربر");
     } finally {
-      setUpdatingUser(false);
+      setIsSubmitting(false);
     }
-  };
-
-  const openDeleteDialog = (user: UserWithDetails) => {
-    setUserToDelete(user);
-    setDeleteDialogOpen(true);
   };
 
   const handleDeleteUser = async () => {
-    if (!userToDelete) return;
+    if (!selectedUser) return;
 
-    setDeletingUser(true);
+    setIsSubmitting(true);
     try {
-      const response = await supabase.functions.invoke('manage-user', {
+      const response = await supabase.functions.invoke("manage-user", {
         body: {
-          action: 'delete',
-          user_id: userToDelete.id
-        }
+          action: "delete",
+          user_id: selectedUser.id,
+        },
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'خطا در حذف کاربر');
-      }
+      if (response.error) throw new Error(response.error.message);
 
-      if (response.data?.error) {
-        throw new Error(response.data.error);
-      }
-
-      toast.success('کاربر با موفقیت حذف شد');
+      toast.success("کاربر با موفقیت حذف شد");
       setDeleteDialogOpen(false);
-      setUserToDelete(null);
+      setSelectedUser(null);
       fetchUsers();
     } catch (error: any) {
-      console.error('Error deleting user:', error);
-      toast.error(error.message || 'خطا در حذف کاربر');
+      toast.error(error.message || "خطا در حذف کاربر");
     } finally {
-      setDeletingUser(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="px-4 md:px-6 lg:px-8 py-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+    <div className="w-full h-full flex flex-col bg-background">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 border-b border-border">
         <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
-            <Users className="w-8 h-8" />
+          <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
+            <Users className="w-6 h-6" />
             مدیریت کاربران
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {users.length} کاربر ثبت‌نام شده
           </p>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
-              <UserPlus className="w-4 h-4" />
+              <Plus className="w-4 h-4" />
               افزودن کاربر
             </Button>
           </DialogTrigger>
@@ -401,29 +248,30 @@ export default function AdminUsers() {
             <DialogHeader>
               <DialogTitle>افزودن کاربر جدید</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 mt-4">
+            <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium mb-1.5 block">ایمیل *</label>
+                <label className="text-sm font-medium block text-right mb-2">ایمیل *</label>
                 <Input
                   type="email"
-                  placeholder="email@example.com"
+                  placeholder="user@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   dir="ltr"
+                  className="text-left"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">رمز عبور *</label>
+                <label className="text-sm font-medium block text-right mb-2">رمز عبور *</label>
                 <Input
                   type="password"
-                  placeholder="حداقل ۶ کاراکتر"
+                  placeholder="حداقل 6 کاراکتر"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   dir="ltr"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">نام کامل</label>
+                <label className="text-sm font-medium block text-right mb-2">نام کامل</label>
                 <Input
                   placeholder="نام و نام خانوادگی"
                   value={formData.full_name}
@@ -431,21 +279,20 @@ export default function AdminUsers() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">شماره تماس</label>
+                <label className="text-sm font-medium block text-right mb-2">شماره تماس</label>
                 <Input
                   placeholder="09123456789"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   dir="ltr"
+                  className="text-left"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1.5 block">نقش</label>
+                <label className="text-sm font-medium block text-right mb-2">نقش</label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value: 'user' | 'admin' | 'moderator') => 
-                    setFormData({ ...formData, role: value })
-                  }
+                  onValueChange={(value: any) => setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -457,15 +304,15 @@ export default function AdminUsers() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button 
-                onClick={handleAddUser} 
-                disabled={addingUser}
+              <Button
+                onClick={handleAddUser}
+                disabled={isSubmitting}
                 className="w-full gap-2"
               >
-                {addingUser ? (
+                {isSubmitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <UserPlus className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                 )}
                 ایجاد کاربر
               </Button>
@@ -474,263 +321,212 @@ export default function AdminUsers() {
         </Dialog>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+      {/* Search */}
+      <div className="p-6 border-b border-border">
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="جستجوی نام یا شماره تماس..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            placeholder="جستجو بر اساس نام یا شماره تماس..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pr-10"
           />
         </div>
-        <Select value={roleFilter} onValueChange={setRoleFilter}>
-          <SelectTrigger className="w-full md:w-48 gap-2">
-            <Filter className="w-4 h-4" />
-            <SelectValue placeholder="فیلتر نقش" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">همه نقش‌ها</SelectItem>
-            <SelectItem value="admin">ادمین</SelectItem>
-            <SelectItem value="moderator">مدیر محتوا</SelectItem>
-            <SelectItem value="user">کاربر عادی</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
-      {loading ? (
-        <div className="text-center py-12">در حال بارگذاری...</div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-card rounded-2xl border border-border overflow-hidden shadow-md"
-        >
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-12"></TableHead>
-                <TableHead className="min-w-[150px]">نام</TableHead>
-                <TableHead className="min-w-[130px]">شماره تماس</TableHead>
-                <TableHead className="min-w-[100px]">نقش</TableHead>
-                <TableHead className="min-w-[80px]">سفارشات</TableHead>
-                <TableHead className="min-w-[80px]">رزروها</TableHead>
-                <TableHead className="min-w-[80px]">دوره‌ها</TableHead>
-                <TableHead className="min-w-[140px]">تاریخ عضویت</TableHead>
-                <TableHead className="w-24 text-center">عملیات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredUsers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                    کاربری یافت نشد
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredUsers.map((user) => (
-                  <Collapsible
+      {/* Table */}
+      <div className="flex-1 overflow-auto">
+        {loading ? (
+          <div className="flex items-center justify-center h-96">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="flex items-center justify-center h-96">
+            <p className="text-muted-foreground">کاربری یافت نشد</p>
+          </div>
+        ) : (
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-muted/50 border-y border-border">
+                <th className="w-10 text-center p-3"></th>
+                <th className="text-right p-3 border-r border-border min-w-[150px] text-sm font-semibold text-foreground">نام</th>
+                <th className="text-right p-3 border-r border-border min-w-[130px] text-sm font-semibold text-foreground">شماره تماس</th>
+                <th className="text-right p-3 border-r border-border min-w-[100px] text-sm font-semibold text-foreground">نقش</th>
+                <th className="text-center p-3 border-r border-border min-w-[80px] text-sm font-semibold text-foreground">سفارشات</th>
+                <th className="text-center p-3 border-r border-border min-w-[80px] text-sm font-semibold text-foreground">رزروها</th>
+                <th className="text-center p-3 border-r border-border min-w-[80px] text-sm font-semibold text-foreground">دوره‌ها</th>
+                <th className="text-right p-3 border-r border-border min-w-[140px] text-sm font-semibold text-foreground">تاریخ عضویت</th>
+                <th className="text-center p-3 border-r border-border w-20 text-sm font-semibold text-foreground">عملیات</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map((user, index) => (
+                <>
+                  <tr
                     key={user.id}
-                    open={expandedUser === user.id}
-                    onOpenChange={(open) => setExpandedUser(open ? user.id : null)}
-                    asChild
+                    className={`border-b border-border hover:bg-muted/30 transition-colors ${
+                      index % 2 === 0 ? "bg-background" : "bg-muted/10"
+                    }`}
                   >
-                    <>
-                      <TableRow className="cursor-pointer hover:bg-muted/50">
-                        <TableCell className="p-0">
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-10 w-10">
-                              {expandedUser === user.id ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </Button>
-                          </CollapsibleTrigger>
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {user.full_name || "بدون نام"}
-                        </TableCell>
-                        <TableCell className="text-sm">{user.phone || "-"}</TableCell>
-                        <TableCell>
-                          <Badge className={ROLE_COLORS[user.role]}>
-                            {ROLE_LABELS[user.role]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="gap-1 whitespace-nowrap">
-                            <ShoppingCart className="w-3 h-3" />
-                            {user.orders.length}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="gap-1 whitespace-nowrap">
-                            <Calendar className="w-3 h-3" />
-                            {user.bookings.length}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="gap-1 whitespace-nowrap">
-                            <GraduationCap className="w-3 h-3" />
-                            {user.enrollments.length}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                          {formatDistanceToNow(new Date(user.created_at), {
-                            addSuffix: true,
-                            locale: faIR,
-                          })}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditDialog(user);
-                              }}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive hover:text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openDeleteDialog(user);
-                              }}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                    <td className="text-center p-3">
+                      <button
+                        onClick={() =>
+                          setExpandedUser(
+                            expandedUser === user.id ? null : user.id
+                          )
+                        }
+                        className="hover:bg-muted rounded p-1"
+                      >
+                        {expandedUser === user.id ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </button>
+                    </td>
+                    <td className="text-right p-3 border-r border-border text-sm font-medium">
+                      {user.full_name || "بدون نام"}
+                    </td>
+                    <td className="text-right p-3 border-r border-border text-sm">
+                      {user.phone || "-"}
+                    </td>
+                    <td className="text-right p-3 border-r border-border">
+                      <Badge className={`${ROLE_COLORS[user.role || "user"]} border-none`}>
+                        {STATUS_LABELS[user.role || "user"]}
+                      </Badge>
+                    </td>
+                    <td className="text-center p-3 border-r border-border">
+                      <Badge variant="outline" className="gap-1 justify-center w-full">
+                        <ShoppingCart className="w-3 h-3" />
+                        {user.orders_count || 0}
+                      </Badge>
+                    </td>
+                    <td className="text-center p-3 border-r border-border">
+                      <Badge variant="outline" className="gap-1 justify-center w-full">
+                        <Calendar className="w-3 h-3" />
+                        {user.bookings_count || 0}
+                      </Badge>
+                    </td>
+                    <td className="text-center p-3 border-r border-border">
+                      <Badge variant="outline" className="gap-1 justify-center w-full">
+                        <BookOpen className="w-3 h-3" />
+                        {user.enrollments_count || 0}
+                      </Badge>
+                    </td>
+                    <td className="text-right p-3 border-r border-border text-sm text-muted-foreground">
+                      {formatDistanceToNow(new Date(user.created_at), {
+                        addSuffix: true,
+                        locale: faIR,
+                      })}
+                    </td>
+                    <td className="text-center p-3 border-r border-border">
+                      <div className="flex items-center justify-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setEditFormData({
+                              full_name: user.full_name || "",
+                              phone: user.phone || "",
+                              role: (user.role as any) || "user",
+                            });
+                            setEditDialogOpen(true);
+                          }}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+
+                  {/* Expanded Details */}
+                  {expandedUser === user.id && (
+                    <tr className="bg-muted/20 border-b border-border">
+                      <td colSpan={9} className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Orders */}
+                          <div className="border border-border rounded-lg p-4">
+                            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-foreground">
+                              <ShoppingCart className="w-4 h-4" />
+                              سفارشات
+                            </h4>
+                            <p className="text-sm text-muted-foreground">تعداد: {user.orders_count || 0}</p>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                      <CollapsibleContent asChild>
-                        <TableRow>
-                          <TableCell colSpan={9} className="bg-muted/30 p-4 md:p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                              {/* Orders */}
-                              <div className="bg-card rounded-xl p-4 border border-border">
-                                <h3 className="font-bold mb-3 flex items-center gap-2 text-sm">
-                                  <ShoppingCart className="w-4 h-4 text-primary" />
-                                  سفارشات اخیر
-                                </h3>
-                                {user.orders.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground">سفارشی ندارد</p>
-                                ) : (
-                                  <div className="space-y-2">
-                                    {user.orders.map((order) => (
-                                      <div
-                                        key={order.id}
-                                        className="flex items-center justify-between text-xs gap-2"
-                                      >
-                                        <Badge variant="outline" className="text-xs">
-                                          {STATUS_LABELS[order.status] || order.status}
-                                        </Badge>
-                                        <span className="font-medium whitespace-nowrap">
-                                          {formatPrice(order.total)} تومان
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
 
-                              {/* Bookings */}
-                              <div className="bg-card rounded-xl p-4 border border-border">
-                                <h3 className="font-bold mb-3 flex items-center gap-2 text-sm">
-                                  <Calendar className="w-4 h-4 text-primary" />
-                                  رزروهای اخیر
-                                </h3>
-                                {user.bookings.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground">رزروی ندارد</p>
-                                ) : (
-                                  <div className="space-y-2">
-                                    {user.bookings.map((booking) => (
-                                      <div
-                                        key={booking.id}
-                                        className="flex items-center justify-between text-xs gap-2"
-                                      >
-                                        <span className="truncate">{booking.services?.name || "-"}</span>
-                                        <Badge variant="outline" className="text-xs whitespace-nowrap">
-                                          {STATUS_LABELS[booking.status] || booking.status}
-                                        </Badge>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
+                          {/* Bookings */}
+                          <div className="border border-border rounded-lg p-4">
+                            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-foreground">
+                              <Calendar className="w-4 h-4" />
+                              رزروها
+                            </h4>
+                            <p className="text-sm text-muted-foreground">تعداد: {user.bookings_count || 0}</p>
+                          </div>
 
-                              {/* Enrollments */}
-                              <div className="bg-card rounded-xl p-4 border border-border">
-                                <h3 className="font-bold mb-3 flex items-center gap-2 text-sm">
-                                  <GraduationCap className="w-4 h-4 text-primary" />
-                                  دوره‌های ثبت‌نام شده
-                                </h3>
-                                {user.enrollments.length === 0 ? (
-                                  <p className="text-xs text-muted-foreground">دوره‌ای ندارد</p>
-                                ) : (
-                                  <div className="space-y-2">
-                                    {user.enrollments.map((enrollment) => (
-                                      <div
-                                        key={enrollment.id}
-                                        className="flex items-center justify-between text-xs gap-2"
-                                      >
-                                        <span className="truncate">{enrollment.courses?.title || "-"}</span>
-                                        <Badge variant="outline" className="text-xs whitespace-nowrap">
-                                          {enrollment.progress_percent || 0}%
-                                        </Badge>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      </CollapsibleContent>
-                    </>
-                  </Collapsible>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </motion.div>
-      )}
+                          {/* Enrollments */}
+                          <div className="border border-border rounded-lg p-4">
+                            <h4 className="font-semibold text-sm mb-3 flex items-center gap-2 text-foreground">
+                              <BookOpen className="w-4 h-4" />
+                              دوره‌های ثبت‌نام شده
+                            </h4>
+                            <p className="text-sm text-muted-foreground">تعداد: {user.enrollments_count || 0}</p>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
-      {/* Edit User Dialog */}
+      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>ویرایش کاربر</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium mb-1.5 block">نام کامل</label>
+              <label className="text-sm font-medium block text-right mb-2">نام کامل</label>
               <Input
                 placeholder="نام و نام خانوادگی"
                 value={editFormData.full_name}
-                onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, full_name: e.target.value })
+                }
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">شماره تماس</label>
+              <label className="text-sm font-medium block text-right mb-2">شماره تماس</label>
               <Input
                 placeholder="09123456789"
                 value={editFormData.phone}
-                onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, phone: e.target.value })
+                }
                 dir="ltr"
+                className="text-left"
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1.5 block">نقش</label>
+              <label className="text-sm font-medium block text-right mb-2">نقش</label>
               <Select
                 value={editFormData.role}
-                onValueChange={(value: 'user' | 'admin' | 'moderator') => 
+                onValueChange={(value: any) =>
                   setEditFormData({ ...editFormData, role: value })
                 }
               >
@@ -744,15 +540,15 @@ export default function AdminUsers() {
                 </SelectContent>
               </Select>
             </div>
-            <Button 
-              onClick={handleUpdateUser} 
-              disabled={updatingUser}
+            <Button
+              onClick={handleEditUser}
+              disabled={isSubmitting}
               className="w-full gap-2"
             >
-              {updatingUser ? (
+              {isSubmitting ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
-                <Edit className="w-4 h-4" />
+                <Edit2 className="w-4 h-4" />
               )}
               ذخیره تغییرات
             </Button>
@@ -760,27 +556,26 @@ export default function AdminUsers() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete User Confirmation */}
+      {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>حذف کاربر</AlertDialogTitle>
             <AlertDialogDescription>
-              آیا مطمئن هستید که می‌خواهید کاربر «{userToDelete?.full_name || 'بدون نام'}» را حذف کنید؟
-              این عمل قابل بازگشت نیست و تمام اطلاعات کاربر حذف خواهد شد.
+              آیا مطمئن هستید که می‌خواهید کاربر «{selectedUser?.full_name || "بدون نام"}» را حذف کنید؟
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel>انصراف</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteUser}
-              disabled={deletingUser}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
+              disabled={isSubmitting}
+              className="bg-destructive hover:bg-destructive/90"
             >
-              {deletingUser ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+              {isSubmitting ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : (
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 mr-2" />
               )}
               حذف کاربر
             </AlertDialogAction>
