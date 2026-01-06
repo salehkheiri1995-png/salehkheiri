@@ -12,6 +12,7 @@ import {
   X,
   Check,
   AlertCircle,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Course {
   id: string;
@@ -73,6 +83,7 @@ export default function CourseForm() {
   const [activeTab, setActiveTab] = useState("images");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
+  const [bucketError, setBucketError] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -183,6 +194,8 @@ export default function CourseForm() {
       const folder = courseId ? courseId : "temp";
       const filePath = `courses/${folder}/${fileName}`;
 
+      console.log("در حال آپلود:", filePath);
+
       // Upload to Supabase
       const { data, error } = await supabase.storage
         .from("course-images")
@@ -193,6 +206,14 @@ export default function CourseForm() {
 
       if (error) {
         console.error("خطا Supabase:", error);
+        
+        // Check if bucket not found
+        if (error.message.includes("not found") || error.message.includes("Bucket")) {
+          setBucketError(true);
+          throw new Error(
+            "Storage bucket ساخته نشده است. لطفا ضابطه ک خوردیک بپیدا کنید."
+          );
+        }
         throw new Error(`خطا آپلود: ${error.message}`);
       }
 
@@ -356,446 +377,491 @@ export default function CourseForm() {
     : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link to="/admin/courses">
-            <Button variant="ghost" size="icon">
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              {courseId ? "ویرایش دوره" : "افزودن دوره جدید"}
-            </h1>
-            {courseId && course && (
-              <p className="text-muted-foreground mt-1">{course.title}</p>
-            )}
+    <>
+      {/* Bucket Error Dialog */}
+      <AlertDialog open={bucketError} onOpenChange={setBucketError}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="w-5 h-5" />
+              Storage Bucket پیدا نشد
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4 text-foreground mt-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p className="font-semibold mb-3">جهت آپلود عکس البته:
+                </p>
+                <ol className="space-y-2 text-sm list-decimal list-inside">
+                  <li>برو <strong>Supabase Dashboard</strong></li>
+                  <li><strong>Storage</strong> ربرو کلیک کن</li>
+                  <li><strong>New Bucket</strong> بزن کلیک کن</li>
+                  <li><strong>Bucket Name:</strong> <code className="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">course-images</code></li>
+                  <li><strong>Public</strong> گزینه را <strong>با علامت</strong> کن</li>
+                  <li><strong>Create</strong> بزن ربرو کلیک کن</li>
+                </ol>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <p className="font-semibold mb-2">📄 بعد از ساختن bucket:</p>
+                <p className="text-sm">مرور کنید به <strong>SQL Editor</strong> و از فایل زیر استفاده کنید:</p>
+                <code className="block bg-slate-900 text-slate-100 p-3 rounded mt-2 text-xs overflow-x-auto">
+                  src/lib/supabase-setup.sql
+                </code>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>توم شد</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              window.open('https://supabase.com/dashboard', '_blank');
+              setBucketError(false);
+            }}>
+              برو به Supabase
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Main Form */}
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link to="/admin/courses">
+              <Button variant="ghost" size="icon">
+                <ArrowRight className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {courseId ? "ویرایش دوره" : "افزودن دوره جدید"}
+              </h1>
+              {courseId && course && (
+                <p className="text-muted-foreground mt-1">{course.title}</p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Tabs */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5">
-            <TabsTrigger value="images">🎨 تصاویر</TabsTrigger>
-            <TabsTrigger value="basic">ℹ️ اطلاعات</TabsTrigger>
-            <TabsTrigger value="details">📚 جزئیات</TabsTrigger>
-            <TabsTrigger value="pricing">💰 قیمت</TabsTrigger>
-            <TabsTrigger value="settings" className="hidden lg:flex">
-              ⚙️
-            </TabsTrigger>
-          </TabsList>
+        {/* Tabs */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-5">
+              <TabsTrigger value="images">🎨 تصاویر</TabsTrigger>
+              <TabsTrigger value="basic">ℹ️ اطلاعات</TabsTrigger>
+              <TabsTrigger value="details">📚 جزئیات</TabsTrigger>
+              <TabsTrigger value="pricing">💰 قیمت</TabsTrigger>
+              <TabsTrigger value="settings" className="hidden lg:flex">
+                ⚙️
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Images Tab */}
-          <TabsContent value="images" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border border-border p-6 space-y-6"
-            >
-              {/* Featured Image */}
-              <div className="space-y-3">
-                <Label className="text-base font-semibold">🎨 عكس اصلی دوره</Label>
-                <p className="text-sm text-muted-foreground">
-                  حداکثر ابعاد: 5MB | فرمت‌ها: JPG, PNG, WebP
-                </p>
+            {/* Images Tab */}
+            <TabsContent value="images" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-xl border border-border p-6 space-y-6"
+              >
+                {/* Featured Image */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">🎨 عكس اصلی دوره</Label>
+                  <p className="text-sm text-muted-foreground">
+                    حداکثر ابعاد: 5MB | فرمت‌ها: JPG, PNG, WebP
+                  </p>
 
-                {formData.image_url ? (
-                  <div className="relative rounded-lg overflow-hidden border border-border">
-                    <img
-                      src={formData.image_url}
-                      alt="Featured"
-                      className="w-full h-80 object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors" />
-                    <div className="absolute top-3 right-3 flex gap-2">
-                      <label>
-                        <Button
-                          type="button"
-                          size="sm"
-                          className="gap-2"
-                          onClick={(e) => e.preventDefault()}
-                        >
-                          <Upload className="w-4 h-4" />
-                          تغیير
-                        </Button>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleImageChange(e, false)}
-                          className="hidden"
-                        />
-                      </label>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeImage()}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-12 cursor-pointer hover:border-primary transition-colors">
-                    <Upload className="w-12 h-12 text-muted-foreground mb-3" />
-                    <span className="text-sm font-medium">كلك كنيد يا فايل را بكشيد</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageChange(e, false)}
-                      className="hidden"
-                      disabled={uploadingFiles.length > 0}
-                    />
-                  </label>
-                )}
-
-                {errors.image_url && (
-                  <div className="flex items-center gap-2 text-red-600 text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    {errors.image_url}
-                  </div>
-                )}
-              </div>
-
-              {/* Gallery Images */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-base font-semibold">
-                    🎶 گالری عکس‌ها
-                  </Label>
-                  <Badge variant="secondary">
-                    {formData.gallery_images.length} / 10
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  برای نمایش جزئیات بیشتر عکس‌ها اضافه کنید
-                </p>
-
-                {formData.gallery_images.length < 10 && (
-                  <label className="flex items-center justify-center border-2 border-dashed border-border rounded-lg p-8 cursor-pointer hover:border-primary transition-colors">
-                    <div className="text-center">
-                      <Plus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <span className="text-sm">+ افزودن عکس‌ها</span>
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handleImageChange(e, true)}
-                      className="hidden"
-                      disabled={uploadingFiles.length > 0}
-                    />
-                  </label>
-                )}
-
-                {formData.gallery_images.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    {formData.gallery_images.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="relative group rounded-lg overflow-hidden border border-border aspect-square"
-                      >
-                        <img
-                          src={img}
-                          alt={`Gallery ${idx + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                  {formData.image_url ? (
+                    <div className="relative rounded-lg overflow-hidden border border-border">
+                      <img
+                        src={formData.image_url}
+                        alt="Featured"
+                        className="w-full h-80 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors" />
+                      <div className="absolute top-3 right-3 flex gap-2">
+                        <label>
                           <Button
                             type="button"
                             size="sm"
-                            variant="destructive"
-                            onClick={() => removeGalleryImage(idx)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="gap-2"
+                            onClick={(e) => e.preventDefault()}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <Upload className="w-4 h-4" />
+                            تغیير
                           </Button>
-                        </div>
-                        <div className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-2 py-1">
-                          {idx + 1}
-                        </div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageChange(e, false)}
+                            className="hidden"
+                          />
+                        </label>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => removeImage()}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </TabsContent>
-
-          {/* Basic Info Tab */}
-          <TabsContent value="basic" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border border-border p-6 space-y-6"
-            >
-              {/* Title */}
-              <div className="space-y-2">
-                <Label>🎯 عنوان دوره</Label>
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Input
-                      value={formData.title}
-                      onChange={(e) =>
-                        setFormData({ ...formData, title: e.target.value })
-                      }
-                      maxLength={100}
-                      placeholder="عنوانی جذاب و واضح"
-                      className={errors.title ? "border-red-500" : ""}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {formData.title.length}/100
-                  </span>
-                </div>
-                {errors.title && (
-                  <p className="text-red-600 text-sm">{errors.title}</p>
-                )}
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label>📝 توضیحات</Label>
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({ ...formData, description: e.target.value })
-                      }
-                      maxLength={2000}
-                      rows={5}
-                      placeholder="برای شرح بیشتر كلیك كنيد..."
-                      className={errors.description ? "border-red-500" : ""}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  {errors.description && (
-                    <p className="text-red-600 text-sm">{errors.description}</p>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-12 cursor-pointer hover:border-primary transition-colors">
+                      <Upload className="w-12 h-12 text-muted-foreground mb-3" />
+                      <span className="text-sm font-medium">كلك كنيد يا فايل را بكشيد</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageChange(e, false)}
+                        className="hidden"
+                        disabled={uploadingFiles.length > 0}
+                      />
+                    </label>
                   )}
-                  <span className="text-xs text-muted-foreground ml-auto">
-                    {formData.description.length}/2000
-                  </span>
+
+                  {errors.image_url && (
+                    <div className="flex items-center gap-2 text-red-600 text-sm">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.image_url}
+                    </div>
+                  )}
                 </div>
-              </div>
 
-              {/* Instructor */}
-              <div className="space-y-2">
-                <Label>👨‍🏫 مدرس</Label>
-                <Input
-                  value={formData.instructor_name}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      instructor_name: e.target.value,
-                    })
-                  }
-                  placeholder="نام مدرس..."
-                />
-              </div>
+                {/* Gallery Images */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-semibold">
+                      🎶 گالری عکس‌ها
+                    </Label>
+                    <Badge variant="secondary">
+                      {formData.gallery_images.length} / 10
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    برای نمایش جزئیات بیشتر عکس‌ها اضافه کنید
+                  </p>
 
-              {/* Level */}
-              <div className="space-y-2">
-                <Label>📊 سطح</Label>
-                <Select value={formData.level} onValueChange={(val) => setFormData({ ...formData, level: val })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="مبتدی">🟢 مبتدی</SelectItem>
-                    <SelectItem value="متوسط">🟡 متوسط</SelectItem>
-                    <SelectItem value="پیشرفته">🔴 پیشرفته</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </motion.div>
-          </TabsContent>
+                  {formData.gallery_images.length < 10 && (
+                    <label className="flex items-center justify-center border-2 border-dashed border-border rounded-lg p-8 cursor-pointer hover:border-primary transition-colors">
+                      <div className="text-center">
+                        <Plus className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <span className="text-sm">+ افزودن عکس‌ها</span>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleImageChange(e, true)}
+                        className="hidden"
+                        disabled={uploadingFiles.length > 0}
+                      />
+                    </label>
+                  )}
 
-          {/* Details Tab */}
-          <TabsContent value="details" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border border-border p-6 space-y-6"
-            >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Duration */}
+                  {formData.gallery_images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      {formData.gallery_images.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className="relative group rounded-lg overflow-hidden border border-border aspect-square"
+                        >
+                          <img
+                            src={img}
+                            alt={`Gallery ${idx + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => removeGalleryImage(idx)}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <div className="absolute top-2 left-2 bg-black/50 text-white text-xs rounded px-2 py-1">
+                            {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            {/* Basic Info Tab */}
+            <TabsContent value="basic" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-xl border border-border p-6 space-y-6"
+              >
+                {/* Title */}
                 <div className="space-y-2">
-                  <Label>⏱️ مدت (ساعت)</Label>
+                  <Label>🎯 عنوان دوره</Label>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Input
+                        value={formData.title}
+                        onChange={(e) =>
+                          setFormData({ ...formData, title: e.target.value })
+                        }
+                        maxLength={100}
+                        placeholder="عنوانی جذاب و واضح"
+                        className={errors.title ? "border-red-500" : ""}
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {formData.title.length}/100
+                    </span>
+                  </div>
+                  {errors.title && (
+                    <p className="text-red-600 text-sm">{errors.title}</p>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label>📝 توضیحات</Label>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Textarea
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({ ...formData, description: e.target.value })
+                        }
+                        maxLength={2000}
+                        rows={5}
+                        placeholder="برای شرح بیشتر كلیك كنيد..."
+                        className={errors.description ? "border-red-500" : ""}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    {errors.description && (
+                      <p className="text-red-600 text-sm">{errors.description}</p>
+                    )}
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {formData.description.length}/2000
+                    </span>
+                  </div>
+                </div>
+
+                {/* Instructor */}
+                <div className="space-y-2">
+                  <Label>👨‍🏫 مدرس</Label>
                   <Input
-                    type="number"
-                    value={formData.duration_hours}
+                    value={formData.instructor_name}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        duration_hours: Number(e.target.value),
+                        instructor_name: e.target.value,
                       })
                     }
-                    min="0"
+                    placeholder="نام مدرس..."
                   />
                 </div>
 
-                {/* Course Type */}
+                {/* Level */}
                 <div className="space-y-2">
-                  <Label>🎬 نوع دوره</Label>
-                  <Select value={formData.course_type} onValueChange={(val) => setFormData({ ...formData, course_type: val })}>
+                  <Label>📊 سطح</Label>
+                  <Select value={formData.level} onValueChange={(val) => setFormData({ ...formData, level: val })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ویدیویی">🎥 ویدیویی</SelectItem>
-                      <SelectItem value="حضوری">👥 حضوری</SelectItem>
-                      <SelectItem value="ترکیبی">🔄 ترکیبی</SelectItem>
+                      <SelectItem value="مبتدی">🟢 مبتدی</SelectItem>
+                      <SelectItem value="متوسط">🟡 متوسط</SelectItem>
+                      <SelectItem value="پیشرفته">🔴 پیشرفته</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            </motion.div>
-          </TabsContent>
+              </motion.div>
+            </TabsContent>
 
-          {/* Pricing Tab */}
-          <TabsContent value="pricing" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border border-border p-6 space-y-6"
+            {/* Details Tab */}
+            <TabsContent value="details" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-xl border border-border p-6 space-y-6"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Duration */}
+                  <div className="space-y-2">
+                    <Label>⏱️ مدت (ساعت)</Label>
+                    <Input
+                      type="number"
+                      value={formData.duration_hours}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          duration_hours: Number(e.target.value),
+                        })
+                      }
+                      min="0"
+                    />
+                  </div>
+
+                  {/* Course Type */}
+                  <div className="space-y-2">
+                    <Label>🎬 نوع دوره</Label>
+                    <Select value={formData.course_type} onValueChange={(val) => setFormData({ ...formData, course_type: val })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ویدیویی">🎥 ویدیویی</SelectItem>
+                        <SelectItem value="حضوری">👥 حضوری</SelectItem>
+                        <SelectItem value="ترکیبی">🔄 ترکیبی</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
+            </TabsContent>
+
+            {/* Pricing Tab */}
+            <TabsContent value="pricing" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-xl border border-border p-6 space-y-6"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Price */}
+                  <div className="space-y-2">
+                    <Label>💰 قیمت فعلی</Label>
+                    <Input
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) =>
+                        setFormData({ ...formData, price: Number(e.target.value) })
+                      }
+                      min="0"
+                      placeholder="0"
+                      className={errors.price ? "border-red-500" : ""}
+                    />
+                    {errors.price && (
+                      <p className="text-red-600 text-sm">{errors.price}</p>
+                    )}
+                  </div>
+
+                  {/* Original Price */}
+                  <div className="space-y-2">
+                    <Label>🏷️ قیمت اصلی</Label>
+                    <Input
+                      type="number"
+                      value={formData.original_price}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          original_price: Number(e.target.value),
+                        })
+                      }
+                      min="0"
+                      placeholder="0"
+                      className={errors.original_price ? "border-red-500" : ""}
+                    />
+                    {errors.original_price && (
+                      <p className="text-red-600 text-sm">{errors.original_price}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Discount Display */}
+                {discountPercent > 0 && (
+                  <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <Badge variant="destructive" className="text-lg">
+                      -{discountPercent}%
+                    </Badge>
+                    <div>
+                      <p className="text-sm font-medium text-red-900 dark:text-red-100">
+                        تخفیف
+                      </p>
+                      <p className="text-xs text-red-700 dark:text-red-300">
+                        از{" "}
+                        {formData.original_price.toLocaleString()} به{" "}
+                        {formData.price.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            </TabsContent>
+
+            {/* Settings Tab */}
+            <TabsContent value="settings" className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card rounded-xl border border-border p-6 space-y-6"
+              >
+                <div className="space-y-4">
+                  {/* Is Active */}
+                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div>
+                      <Label className="font-semibold">✅ فعال</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        این دوره قابل خرید است
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.is_active}
+                      onCheckedChange={(val) =>
+                        setFormData({ ...formData, is_active: val })
+                      }
+                    />
+                  </div>
+
+                  {/* Is New */}
+                  <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                    <div>
+                      <Label className="font-semibold">🆕 جدید</Label>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        نمایش badge "جدید" برای 7 روز
+                      </p>
+                    </div>
+                    <Switch
+                      checked={formData.is_new}
+                      onCheckedChange={(val) =>
+                        setFormData({ ...formData, is_new: val })
+                      }
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 rounded-t-lg">
+            <Link to="/admin/courses">
+              <Button type="button" variant="outline">
+                انصراف
+              </Button>
+            </Link>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => navigate("/admin/courses")}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Price */}
-                <div className="space-y-2">
-                  <Label>💰 قیمت فعلی</Label>
-                  <Input
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) =>
-                      setFormData({ ...formData, price: Number(e.target.value) })
-                    }
-                    min="0"
-                    placeholder="0"
-                    className={errors.price ? "border-red-500" : ""}
-                  />
-                  {errors.price && (
-                    <p className="text-red-600 text-sm">{errors.price}</p>
-                  )}
-                </div>
-
-                {/* Original Price */}
-                <div className="space-y-2">
-                  <Label>🏷️ قیمت اصلی</Label>
-                  <Input
-                    type="number"
-                    value={formData.original_price}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        original_price: Number(e.target.value),
-                      })
-                    }
-                    min="0"
-                    placeholder="0"
-                    className={errors.original_price ? "border-red-500" : ""}
-                  />
-                  {errors.original_price && (
-                    <p className="text-red-600 text-sm">{errors.original_price}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Discount Display */}
-              {discountPercent > 0 && (
-                <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <Badge variant="destructive" className="text-lg">
-                    -{discountPercent}%
-                  </Badge>
-                  <div>
-                    <p className="text-sm font-medium text-red-900 dark:text-red-100">
-                      تخفیف
-                    </p>
-                    <p className="text-xs text-red-700 dark:text-red-300">
-                      از{" "}
-                      {formData.original_price.toLocaleString()} به{" "}
-                      {formData.price.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-card rounded-xl border border-border p-6 space-y-6"
-            >
-              <div className="space-y-4">
-                {/* Is Active */}
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                  <div>
-                    <Label className="font-semibold">✅ فعال</Label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      این دوره قابل خرید است
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.is_active}
-                    onCheckedChange={(val) =>
-                      setFormData({ ...formData, is_active: val })
-                    }
-                  />
-                </div>
-
-                {/* Is New */}
-                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                  <div>
-                    <Label className="font-semibold">🆕 جدید</Label>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      نمایش badge "جدید" برای 7 روز
-                    </p>
-                  </div>
-                  <Switch
-                    checked={formData.is_new}
-                    onCheckedChange={(val) =>
-                      setFormData({ ...formData, is_new: val })
-                    }
-                  />
-                </div>
-              </div>
-            </motion.div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 sticky bottom-0 bg-background/95 backdrop-blur border-t border-border p-4 rounded-t-lg">
-          <Link to="/admin/courses">
-            <Button type="button" variant="outline">
-              انصراف
+              <Eye className="w-4 h-4 mr-2" />
+              پیش‌نمایش
             </Button>
-          </Link>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => navigate("/admin/courses")}
-          >
-            <Eye className="w-4 h-4 mr-2" />
-            پیش‌نمایش
-          </Button>
-          <Button type="submit" disabled={saving || uploadingFiles.length > 0} className="gap-2">
-            {saving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            {saving ? "در حال ذخیره..." : "ذخیره"}
-          </Button>
-        </div>
-      </form>
-    </div>
+            <Button type="submit" disabled={saving || uploadingFiles.length > 0} className="gap-2">
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {saving ? "در حال ذخیره..." : "ذخیره"}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </>
   );
 }
