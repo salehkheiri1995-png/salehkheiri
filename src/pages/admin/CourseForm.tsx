@@ -62,11 +62,6 @@ interface FormData {
   is_new: boolean;
 }
 
-interface UploadProgress {
-  featured: number;
-  gallery: { [key: string]: number };
-}
-
 export default function CourseForm() {
   const { courseId } = useParams<{ courseId?: string }>();
   const navigate = useNavigate();
@@ -76,10 +71,6 @@ export default function CourseForm() {
   const [loading, setLoading] = useState(courseId ? true : false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("images");
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress>({
-    featured: 0,
-    gallery: {},
-  });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
 
@@ -171,43 +162,52 @@ export default function CourseForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const uploadImage = async (file: File, isGallery: boolean = false) => {
-    return new Promise<string>((resolve, reject) => {
-      try {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            const timestamp = Date.now();
-            const randomId = Math.random().toString(36).substring(7);
-            const fileName = isGallery
-              ? `gallery-${timestamp}-${randomId}.webp`
-              : `featured-${timestamp}.webp`;
-
-            const { data, error } = await supabase.storage
-              .from("course-images")
-              .upload(`${courseId || "temp"}/${fileName}`, file, {
-                cacheControl: "3600",
-                upsert: true,
-              });
-
-            if (error) throw error;
-
-            // Get public URL
-            const {data: publicData} = supabase.storage
-              .from("course-images")
-              .getPublicUrl(data.path);
-
-            resolve(publicData.publicUrl);
-          } catch (error) {
-            console.error("خطا در آپلود:", error);
-            reject(error);
-          }
-        };
-        reader.readAsArrayBuffer(file);
-      } catch (error) {
-        reject(error);
+  const uploadImage = async (file: File, isGallery: boolean = false): Promise<string> => {
+    try {
+      // Validate file
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error("فایل بیش از 5MB است");
       }
-    });
+
+      if (!file.type.startsWith("image/")) {
+        throw new Error("فلط عکس مجاز است");
+      }
+
+      // Create unique filename
+      const timestamp = Date.now();
+      const randomId = Math.random().toString(36).substring(7);
+      const fileName = isGallery
+        ? `gallery-${timestamp}-${randomId}.webp`
+        : `featured-${timestamp}.webp`;
+
+      const folder = courseId ? courseId : "temp";
+      const filePath = `courses/${folder}/${fileName}`;
+
+      // Upload to Supabase
+      const { data, error } = await supabase.storage
+        .from("course-images")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: true,
+        });
+
+      if (error) {
+        console.error("خطا Supabase:", error);
+        throw new Error(`خطا آپلود: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: publicData } = supabase.storage
+        .from("course-images")
+        .getPublicUrl(data.path);
+
+      console.log("عكس با موفقیت آپلود شد:", publicData.publicUrl);
+
+      return publicData.publicUrl;
+    } catch (error: any) {
+      console.error("خطا در آپلود:", error);
+      throw error;
+    }
   };
 
   const handleImageChange = async (
@@ -220,51 +220,46 @@ export default function CourseForm() {
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-
-        // Validation
-        if (file.size > 5 * 1024 * 1024) {
-          toast({
-            variant: "destructive",
-            title: "خطا",
-            description: `فایل ${file.name} بیش از 5MB است`,
-          });
-          continue;
-        }
-
-        if (!file.type.startsWith("image/")) {
-          toast({
-            variant: "destructive",
-            title: "خطا",
-            description: `فایل ${file.name} عكس نیست`,
-          });
-          continue;
-        }
-
         const fileId = `${Date.now()}-${i}`;
+        
+        // Add to uploading list
         setUploadingFiles((prev) => [...prev, fileId]);
 
-        const url = await uploadImage(file, isGallery);
+        try {
+          // Upload image
+          const url = await uploadImage(file, isGallery);
 
-        if (isGallery) {
-          setFormData((prev) => ({
-            ...prev,
-            gallery_images: [...prev.gallery_images, url],
-          }));
-        } else {
-          setFormData((prev) => ({
-            ...prev,
-            image_url: url,
-          }));
+          // Add to form
+          if (isGallery) {
+            setFormData((prev) => ({
+              ...prev,
+              gallery_images: [...prev.gallery_images, url],
+            }));
+          } else {
+            setFormData((prev) => ({
+              ...prev,
+              image_url: url,
+            }));
+          }
+
+          toast({
+            title: "موفق",
+            description: `${isGallery ? "عكس گالری" : "عكس"} با موفقیت آپلود شد`,
+          });
+        } catch (error: any) {
+          console.error(`خطا فایل ${file.name}:`, error);
+          toast({
+            variant: "destructive",
+            title: "خطا آپلود",
+            description: error.message || `خطا در آپلود ${file.name}`,
+          });
+        } finally {
+          // Remove from uploading list
+          setUploadingFiles((prev) => prev.filter((id) => id !== fileId));
         }
-
-        setUploadingFiles((prev) => prev.filter((id) => id !== fileId));
-        toast({
-          title: "موفق",
-          description: `${isGallery ? "عكس گالری" : "عكس"} با موفقیت آپلود شد`,
-        });
       }
     } catch (error) {
-      console.error("خطا در آپلود:", error);
+      console.error("خطا کلی:", error);
       toast({
         variant: "destructive",
         title: "خطا",
@@ -447,12 +442,13 @@ export default function CourseForm() {
                 ) : (
                   <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-lg p-12 cursor-pointer hover:border-primary transition-colors">
                     <Upload className="w-12 h-12 text-muted-foreground mb-3" />
-                    <span className="text-sm font-medium">كلك كنيد يا فايل را را بكشيد</span>
+                    <span className="text-sm font-medium">كلك كنيد يا فايل را بكشيد</span>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleImageChange(e, false)}
                       className="hidden"
+                      disabled={uploadingFiles.length > 0}
                     />
                   </label>
                 )}
@@ -491,6 +487,7 @@ export default function CourseForm() {
                       multiple
                       onChange={(e) => handleImageChange(e, true)}
                       className="hidden"
+                      disabled={uploadingFiles.length > 0}
                     />
                   </label>
                 )}
@@ -789,7 +786,7 @@ export default function CourseForm() {
             <Eye className="w-4 h-4 mr-2" />
             پیش‌نمایش
           </Button>
-          <Button type="submit" disabled={saving} className="gap-2">
+          <Button type="submit" disabled={saving || uploadingFiles.length > 0} className="gap-2">
             {saving ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
