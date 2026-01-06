@@ -30,7 +30,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { Plus, Pencil, Trash2, Camera, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Camera, GripVertical, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface PortfolioItem {
@@ -50,11 +50,124 @@ const categories = [
   { id: "skin", label: "پوست" },
 ];
 
+// Sample data - fallback when DB is empty
+const samplePortfolioData = [
+  {
+    id: "sample-1",
+    title: "آرایش عروس لاکچری",
+    category: "makeup",
+    description: "آرایش مدرن و الگان برای عروسی",
+    image_url: "https://images.unsplash.com/photo-1607746882042-f3978991f23e?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 1,
+    is_active: true,
+  },
+  {
+    id: "sample-2",
+    title: "رنگ و مو طبیعی",
+    category: "hair",
+    description: "سبک مو زنانه مدرن",
+    image_url: "https://images.unsplash.com/photo-1562599810-d0d1c27c9ae5?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 2,
+    is_active: true,
+  },
+  {
+    id: "sample-3",
+    title: "طراحی ناخن ژله‌ای",
+    category: "nail",
+    description: "رنگ های مختلف و طرح های جدید",
+    image_url: "https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 3,
+    is_active: true,
+  },
+  {
+    id: "sample-4",
+    title: "درمان پوست صورت",
+    category: "skin",
+    description: "تمیزکاری و درمان پوست حساس",
+    image_url: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 4,
+    is_active: true,
+  },
+  {
+    id: "sample-5",
+    title: "موج و فر طبیعی",
+    category: "hair",
+    description: "بوکل های صحیح و طبیعی",
+    image_url: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 5,
+    is_active: true,
+  },
+  {
+    id: "sample-6",
+    title: "آرایش شام برای مهمانی",
+    category: "makeup",
+    description: "آرایش درخشان برای شب",
+    image_url: "https://images.unsplash.com/photo-1529148482759-b3997e4ea767?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 6,
+    is_active: true,
+  },
+  {
+    id: "sample-7",
+    title: "طراحی ناخن مینیمالیست",
+    category: "nail",
+    description: "طرح ساده و شیک",
+    image_url: "https://images.unsplash.com/photo-1610992015732-2449ec28227c?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 7,
+    is_active: true,
+  },
+  {
+    id: "sample-8",
+    title: "بلیچ و رنگ مو",
+    category: "hair",
+    description: "تبدیل رنگ مو به سایه‌های روشن",
+    image_url: "https://images.unsplash.com/photo-1563458500-4b20c6cb4c9b?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 8,
+    is_active: true,
+  },
+  {
+    id: "sample-9",
+    title: "پاکسازی و مراقبت پوست",
+    category: "skin",
+    description: "پروتکل مراقبت کامل پوست",
+    image_url: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 9,
+    is_active: true,
+  },
+  {
+    id: "sample-10",
+    title: "آرایش روزمره طبیعی",
+    category: "makeup",
+    description: "آرایش روزانه برای محیط کار",
+    image_url: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 10,
+    is_active: true,
+  },
+  {
+    id: "sample-11",
+    title: "ناخن کریستالی براق",
+    category: "nail",
+    description: "ناخن براق و درخشان",
+    image_url: "https://images.unsplash.com/photo-1600797260371-e80fcca6a472?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 11,
+    is_active: true,
+  },
+  {
+    id: "sample-12",
+    title: "اصلاح ابرو حرفه‌ای",
+    category: "makeup",
+    description: "فرم‌دهی و رنگ ابرو",
+    image_url: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
+    order_index: 12,
+    is_active: true,
+  },
+];
+
 export default function AdminPortfolio() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
+  const [isSampleData, setIsSampleData] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -67,12 +180,24 @@ export default function AdminPortfolio() {
   const { data: portfolioItems, isLoading } = useQuery({
     queryKey: ["admin-portfolio"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("portfolio")
-        .select("*")
-        .order("order_index");
-      if (error) throw error;
-      return data as PortfolioItem[];
+      try {
+        const { data, error } = await supabase
+          .from("portfolio")
+          .select("*")
+          .order("order_index");
+        
+        // اگر DB خالی بود، Sample Data برگردان
+        if (error || !data || data.length === 0) {
+          setIsSampleData(true);
+          return samplePortfolioData as PortfolioItem[];
+        }
+        
+        setIsSampleData(false);
+        return data as PortfolioItem[];
+      } catch (err) {
+        setIsSampleData(true);
+        return samplePortfolioData as PortfolioItem[];
+      }
     },
   });
 
@@ -197,6 +322,19 @@ export default function AdminPortfolio() {
         </Button>
       </div>
 
+      {/* Warning if sample data */}
+      {isSampleData && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+          <div>
+            <h3 className="font-medium text-amber-900">Sample Data در حال نمایش</h3>
+            <p className="text-sm text-amber-800 mt-1">
+              Database هنوز لا ایتم ندارد. برای مشاهده نمونه ایتم از Sample Data استفاده میشود. یک آیتم جدید اضافه کنید تا Database شروع شود!
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
@@ -294,9 +432,17 @@ export default function AdminPortfolio() {
                     <TableCell>
                       <Switch
                         checked={item.is_active}
-                        onCheckedChange={(checked) =>
-                          toggleActiveMutation.mutate({ id: item.id, is_active: checked })
-                        }
+                        onCheckedChange={(checked) => {
+                          // اگر Sample Data است، نمیتوان تغییر دهی
+                          if (item.id.startsWith("sample-")) {
+                            toast({
+                              title: "نمیتوانید Sample Data را تغییر دهید",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          toggleActiveMutation.mutate({ id: item.id, is_active: checked });
+                        }}
                       />
                     </TableCell>
                     <TableCell>
@@ -313,6 +459,14 @@ export default function AdminPortfolio() {
                           size="icon"
                           className="text-destructive"
                           onClick={() => {
+                            // اگر Sample Data است، نمیتوان حذف دهی
+                            if (item.id.startsWith("sample-")) {
+                              toast({
+                                title: "نمیتوانید Sample Data را حذف دهید",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
                             if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
                               deleteMutation.mutate(item.id);
                             }
