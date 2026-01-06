@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, ArrowRight, GripVertical, Play, Loader2 } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowRight, Play, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,17 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-
-interface Lesson {
-  id: string;
-  course_id: string;
-  title: string;
-  description: string | null;
-  video_url: string | null;
-  duration_minutes: number;
-  order_index: number;
-  is_free: boolean;
-}
+import { coursesService, lessonsService, Lesson } from "@/services/coursesService";
 
 interface Course {
   id: string;
@@ -58,30 +48,24 @@ export default function AdminLessons() {
     }
   }, [courseId]);
 
-  const fetchCourse = async () => {
-    const { data, error } = await supabase
-      .from("courses")
-      .select("id, title")
-      .eq("id", courseId)
-      .single();
-    
-    if (!error && data) {
-      setCourse(data);
+  const fetchCourse = () => {
+    try {
+      const data = coursesService.getCourse(courseId!);
+      if (data) {
+        setCourse({ id: data.id, title: data.title });
+      }
+    } catch (error) {
+      console.error('خطا:', error);
     }
   };
 
-  const fetchLessons = async () => {
+  const fetchLessons = () => {
     try {
-      const { data, error } = await supabase
-        .from("course_lessons")
-        .select("*")
-        .eq("course_id", courseId)
-        .order("order_index");
-
-      if (error) throw error;
-      setLessons(data || []);
+      setLoading(true);
+      const data = lessonsService.getLessonsByCourse(courseId!);
+      setLessons(data);
     } catch (error) {
-      console.error("Error fetching lessons:", error);
+      console.error('خطا در دریافت درس‌ها:', error);
     } finally {
       setLoading(false);
     }
@@ -93,35 +77,24 @@ export default function AdminLessons() {
 
     try {
       if (editingLesson) {
-        const { error } = await supabase
-          .from("course_lessons")
-          .update({
-            title: formData.title,
-            description: formData.description || null,
-            video_url: formData.video_url || null,
-            duration_minutes: formData.duration_minutes,
-            is_free: formData.is_free,
-          })
-          .eq("id", editingLesson.id);
-
-        if (error) throw error;
-        toast({ title: "موفق", description: "درس ویرایش شد" });
-      } else {
-        const nextIndex = lessons.length > 0 
-          ? Math.max(...lessons.map(l => l.order_index)) + 1 
-          : 0;
-
-        const { error } = await supabase.from("course_lessons").insert([{
-          course_id: courseId,
+        lessonsService.updateLesson(editingLesson.id, {
           title: formData.title,
           description: formData.description || null,
           video_url: formData.video_url || null,
           duration_minutes: formData.duration_minutes,
           is_free: formData.is_free,
-          order_index: nextIndex,
-        }]);
-
-        if (error) throw error;
+        });
+        toast({ title: "موفق", description: "درس ویرایش شد" });
+      } else {
+        lessonsService.addLesson({
+          course_id: courseId!,
+          title: formData.title,
+          description: formData.description || null,
+          video_url: formData.video_url || null,
+          duration_minutes: formData.duration_minutes,
+          order_index: lessons.length,
+          is_free: formData.is_free,
+        });
         toast({ title: "موفق", description: "درس اضافه شد" });
       }
 
@@ -148,14 +121,15 @@ export default function AdminLessons() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("آیا از حذف این درس مطمئن هستید؟")) return;
+  const handleDelete = (id: string) => {
+    if (!confirm("آيا از حذف اين درس مطمئن هستيد؟")) return;
 
     try {
-      const { error } = await supabase.from("course_lessons").delete().eq("id", id);
-      if (error) throw error;
-      toast({ title: "موفق", description: "درس حذف شد" });
-      fetchLessons();
+      const success = lessonsService.deleteLesson(id);
+      if (success) {
+        toast({ title: "موفق", description: "درس حذف شد" });
+        fetchLessons();
+      }
     } catch (error: any) {
       toast({ variant: "destructive", title: "خطا", description: error.message });
     }
@@ -264,9 +238,6 @@ export default function AdminLessons() {
               transition={{ delay: index * 0.05 }}
               className="flex items-center gap-4 bg-card rounded-xl border border-border p-4"
             >
-              <div className="text-muted-foreground">
-                <GripVertical className="w-5 h-5" />
-              </div>
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <span className="font-bold text-primary">{index + 1}</span>
               </div>
