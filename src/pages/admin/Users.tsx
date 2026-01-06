@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   Search, 
   Trash2,
@@ -10,7 +11,8 @@ import {
   Users,
   ShoppingCart,
   Calendar,
-  BookOpen
+  BookOpen,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,6 +70,7 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 export default function AdminUsers() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -227,102 +230,102 @@ export default function AdminUsers() {
   return (
     <div className="w-full h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 border-b border-border">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
-            <Users className="w-6 h-6" />
-            مدیریت کاربران
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {users.length} کاربر ثبت‌نام شده
-          </p>
-        </div>
-        <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              افزودن کاربر
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>افزودن کاربر جدید</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium block text-right mb-2">ایمیل *</label>
-                <Input
-                  type="email"
-                  placeholder="user@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  dir="ltr"
-                  className="text-left"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block text-right mb-2">رمز عبور *</label>
-                <Input
-                  type="password"
-                  placeholder="حداقل 6 کاراکتر"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  dir="ltr"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block text-right mb-2">نام کامل</label>
-                <Input
-                  placeholder="نام و نام خانوادگی"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block text-right mb-2">شماره تماس</label>
-                <Input
-                  placeholder="09123456789"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  dir="ltr"
-                  className="text-left"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium block text-right mb-2">نقش</label>
-                <Select
-                  value={formData.role}
-                  onValueChange={(value: any) => setFormData({ ...formData, role: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">کاربر عادی</SelectItem>
-                    <SelectItem value="moderator">مدیر محتوا</SelectItem>
-                    <SelectItem value="admin">ادمین</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                onClick={handleAddUser}
-                disabled={isSubmitting}
-                className="w-full gap-2"
-              >
-                {isSubmitting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Plus className="w-4 h-4" />
-                )}
-                ایجاد کاربر
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Search */}
       <div className="p-6 border-b border-border">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
+              <Users className="w-6 h-6" />
+              مدیریت کاربران
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {users.length} کاربر ثبت‌نام شده
+            </p>
+          </div>
+          <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                افزودن کاربر
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>افزودن کاربر جدید</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium block text-right mb-2">ایمیل *</label>
+                  <Input
+                    type="email"
+                    placeholder="user@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    dir="ltr"
+                    className="text-left"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block text-right mb-2">رمز عبور *</label>
+                  <Input
+                    type="password"
+                    placeholder="حداقل 6 کاراکتر"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    dir="ltr"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block text-right mb-2">نام کامل</label>
+                  <Input
+                    placeholder="نام و نام خانوادگی"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block text-right mb-2">شماره تماس</label>
+                  <Input
+                    placeholder="09123456789"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    dir="ltr"
+                    className="text-left"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block text-right mb-2">نقش</label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value: any) => setFormData({ ...formData, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">کاربر عادی</SelectItem>
+                      <SelectItem value="moderator">مدیر محتوا</SelectItem>
+                      <SelectItem value="admin">ادمین</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={handleAddUser}
+                  disabled={isSubmitting}
+                  className="w-full gap-2"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Plus className="w-4 h-4" />
+                  )}
+                  ایجاد کاربر
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Search */}
         <div className="relative">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -356,7 +359,7 @@ export default function AdminUsers() {
                 <th className="text-center p-3 border-r border-border min-w-[80px] text-sm font-semibold text-foreground">رزروها</th>
                 <th className="text-center p-3 border-r border-border min-w-[80px] text-sm font-semibold text-foreground">دوره‌ها</th>
                 <th className="text-right p-3 border-r border-border min-w-[140px] text-sm font-semibold text-foreground">تاریخ عضویت</th>
-                <th className="text-center p-3 border-r border-border w-20 text-sm font-semibold text-foreground">عملیات</th>
+                <th className="text-center p-3 border-r border-border text-sm font-semibold text-foreground">عملیات</th>
               </tr>
             </thead>
             <tbody>
@@ -421,6 +424,14 @@ export default function AdminUsers() {
                     </td>
                     <td className="text-center p-3 border-r border-border">
                       <div className="flex items-center justify-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/admin/users/${user.id}`)}
+                          title="مشاهده جزئیات"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"
