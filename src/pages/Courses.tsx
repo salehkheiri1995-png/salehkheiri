@@ -7,25 +7,49 @@ import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
-import { coursesService, Course } from "@/services/coursesService";
+import { useToast } from "@/hooks/use-toast";
+import api from "@/services/api";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  instructor_name: string;
+  price: number;
+  original_price?: number;
+  duration_hours: number;
+  students_count: number;
+  rating: number;
+  level: string;
+  image_url?: string;
+  is_new: boolean;
+}
 
 export default function Courses() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // دریافت دوره‌ها از localStorage
-    try {
-      const data = coursesService.getAllCourses();
-      // فقط دوره‌های فعال را نشان ده
-      const activeCourses = data.filter(c => c.is_active);
-      setCourses(activeCourses);
-    } catch (error) {
-      console.error('خطا در دریافت دوره‌ها:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    const fetchCourses = async () => {
+      try {
+        setIsLoading(true);
+        const data = await api.courses.getAll();
+        setCourses(data || []);
+      } catch (error) {
+        console.error('خطا در دریافت دوره‌ها:', error);
+        toast({
+          title: "خطا",
+          description: "ناموفق در دریافت دوره‌ها",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
   }, []);
 
   const formatPrice = (price: number) => {
@@ -122,7 +146,7 @@ export default function Courses() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-accent fill-accent" />
-                        {(course.students_count > 0 ? 4.5 : 0).toFixed(1)}
+                        {(course.rating || 0).toFixed(1)}
                       </span>
                     </div>
 
