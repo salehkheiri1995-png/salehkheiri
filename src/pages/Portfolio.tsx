@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,14 +8,124 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Camera, X } from "lucide-react";
-import { portfolioSampleData } from "@/data/portfolioData";
+
+// Sample data with id field
+const portfolioSampleData = [
+  {
+    id: "1",
+    title: "آرایش عروس لاکچری",
+    category: "makeup",
+    description: "آرایش مدرن و الگان برای عروسی",
+    image_url: "https://images.unsplash.com/photo-1607746882042-f3978991f23e?w=400&h=400&fit=crop",
+    order_index: 1,
+    is_active: true,
+  },
+  {
+    id: "2",
+    title: "رنگ و مو طبیعی",
+    category: "hair",
+    description: "سبک مو زنانه مدرن",
+    image_url: "https://images.unsplash.com/photo-1562599810-d0d1c27c9ae5?w=400&h=400&fit=crop",
+    order_index: 2,
+    is_active: true,
+  },
+  {
+    id: "3",
+    title: "طراحی ناخن ژله‌ای",
+    category: "nail",
+    description: "رنگ های مختلف و طرح های جدید",
+    image_url: "https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&h=400&fit=crop",
+    order_index: 3,
+    is_active: true,
+  },
+  {
+    id: "4",
+    title: "درمان پوست صورت",
+    category: "skin",
+    description: "تمیزکاری و درمان پوست حساس",
+    image_url: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=400&h=400&fit=crop",
+    order_index: 4,
+    is_active: true,
+  },
+  {
+    id: "5",
+    title: "موج و فر طبیعی",
+    category: "hair",
+    description: "بوکل های صحیح و طبیعی",
+    image_url: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=400&h=400&fit=crop",
+    order_index: 5,
+    is_active: true,
+  },
+  {
+    id: "6",
+    title: "آرایش شام برای مهمانی",
+    category: "makeup",
+    description: "آرایش درخشان برای شب",
+    image_url: "https://images.unsplash.com/photo-1529148482759-b3997e4ea767?w=400&h=400&fit=crop",
+    order_index: 6,
+    is_active: true,
+  },
+  {
+    id: "7",
+    title: "طراحی ناخن مینیمالیست",
+    category: "nail",
+    description: "طرح ساده و شیک",
+    image_url: "https://images.unsplash.com/photo-1610992015732-2449ec28227c?w=400&h=400&fit=crop",
+    order_index: 7,
+    is_active: true,
+  },
+  {
+    id: "8",
+    title: "بلیچ و رنگ مو",
+    category: "hair",
+    description: "تبدیل رنگ مو به سایه‌های روشن",
+    image_url: "https://images.unsplash.com/photo-1563458500-4b20c6cb4c9b?w=400&h=400&fit=crop",
+    order_index: 8,
+    is_active: true,
+  },
+  {
+    id: "9",
+    title: "پاکسازی و مراقبت پوست",
+    category: "skin",
+    description: "پروتکل مراقبت کامل پوست",
+    image_url: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=400&h=400&fit=crop",
+    order_index: 9,
+    is_active: true,
+  },
+  {
+    id: "10",
+    title: "آرایش روزمره طبیعی",
+    category: "makeup",
+    description: "آرایش روزانه برای محیط کار",
+    image_url: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop",
+    order_index: 10,
+    is_active: true,
+  },
+  {
+    id: "11",
+    title: "ناخن کریستالی براق",
+    category: "nail",
+    description: "ناخن براق و درخشان",
+    image_url: "https://images.unsplash.com/photo-1600797260371-e80fcca6a472?w=400&h=400&fit=crop",
+    order_index: 11,
+    is_active: true,
+  },
+  {
+    id: "12",
+    title: "اصلاح ابرو حرفه‌ای",
+    category: "makeup",
+    description: "فرم‌دهی و رنگ ابرو",
+    image_url: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=400&h=400&fit=crop",
+    order_index: 12,
+    is_active: true,
+  },
+];
 
 export default function Portfolio() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [useSampleData, setUseSampleData] = useState(false);
 
-  const { data: portfolioItems, isLoading, error } = useQuery({
+  const { data: portfolioItems, isLoading } = useQuery({
     queryKey: ["portfolio"],
     queryFn: async () => {
       try {
@@ -25,23 +135,11 @@ export default function Portfolio() {
           .eq("is_active", true)
           .order("order_index");
         
-        if (error) {
-          console.error("Portfolio query error:", error);
-          // Use sample data if query fails
-          setUseSampleData(true);
+        if (error || !data || data.length === 0) {
           return portfolioSampleData;
         }
-        
-        // If no data from database, use sample data
-        if (!data || data.length === 0) {
-          setUseSampleData(true);
-          return portfolioSampleData;
-        }
-        
         return data;
       } catch (err) {
-        console.error("Portfolio fetch error:", err);
-        setUseSampleData(true);
         return portfolioSampleData;
       }
     },
@@ -57,7 +155,7 @@ export default function Portfolio() {
   ];
 
   const filteredItems = portfolioItems?.filter(
-    (item) => selectedCategory === "all" || item.category === selectedCategory
+    (item: any) => selectedCategory === "all" || item.category === selectedCategory
   );
 
   return (
@@ -78,11 +176,6 @@ export default function Portfolio() {
             <p className="text-muted-foreground max-w-2xl mx-auto">
               مجموعه‌ای از بهترین کارهای انجام شده توسط متخصصین ما
             </p>
-            {useSampleData && (
-              <p className="text-sm text-amber-600 mt-2">
-                ℹ️ نمونه داده‌های نمایشی
-              </p>
-            )}
           </motion.div>
 
           {/* Category Filter */}
@@ -120,7 +213,7 @@ export default function Portfolio() {
               className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
             >
               <AnimatePresence>
-                {filteredItems?.map((item, index) => (
+                {filteredItems?.map((item: any, index: number) => (
                   <motion.div
                     key={item.id || `${item.category}-${index}`}
                     layout
