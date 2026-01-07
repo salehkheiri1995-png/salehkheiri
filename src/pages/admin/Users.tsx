@@ -131,7 +131,7 @@ export default function AdminUsers() {
             orders_count: ordersCount || 0,
             bookings_count: bookingsCount || 0,
             enrollments_count: enrollmentsCount || 0,
-            role: roleMap.get(profile.id) || "user",
+            role: (roleMap.get(profile.id) || "user") as 'admin' | 'moderator' | 'user',
           };
         })
       );

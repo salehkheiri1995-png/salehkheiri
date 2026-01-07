@@ -71,8 +71,14 @@ export default function AdminEnrollments() {
       setLoading(true);
       const data = enrollmentsService.getEnrollmentsByCourse(courseId!);
       setEnrollments(data);
-      const stats = enrollmentsService.getCourseStats(courseId!);
-      setStats(stats);
+      const courseStats = enrollmentsService.getCourseStats(courseId!);
+      setStats({
+        total: courseStats.total_enrollments,
+        completed: courseStats.completed,
+        in_progress: courseStats.in_progress,
+        not_started: courseStats.not_started,
+        average_progress: courseStats.average_progress,
+      });
     } catch (error) {
       console.error('خطا:', error);
     } finally {
