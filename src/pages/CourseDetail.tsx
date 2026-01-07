@@ -79,13 +79,12 @@ export default function CourseDetail() {
     }
 
     try {
-      const newEnrollment = enrollmentsService.enrollStudent(
-        id,
-        user.id,
-        user.email || "",
-        user.user_metadata?.name || "دانشجو",
-        ""
-      );
+      const newEnrollment = enrollmentsService.enroll({
+        course_id: id,
+        student_email: user.email || "",
+        student_name: user.user_metadata?.name || "دانشجو",
+        phone: null,
+      });
       setEnrollment(newEnrollment);
       toast({
         title: "ثبت‌نام موفق!",
@@ -104,7 +103,7 @@ export default function CourseDetail() {
     if (!enrollment) return;
     
     try {
-      enrollmentsService.updateProgress(enrollment.id, lessons.length, completed ? 100 : 0);
+      enrollmentsService.updateProgress(enrollment.id, completed ? 100 : 0);
       
       // بروز رسانی progress
       const updatedEnrollment = { ...enrollment, progress: completed ? 100 : 0 };
