@@ -26,7 +26,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { coursesService, Course } from "@/services/coursesService";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FormData {
   title: string;
@@ -48,7 +48,7 @@ export default function CourseForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [course, setCourse] = useState<Course | null>(null);
+  const [course, setCourse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("images");
@@ -75,12 +75,16 @@ export default function CourseForm() {
     }
   }, [courseId]);
 
-  const fetchCourse = () => {
+  const fetchCourse = async () => {
     try {
       setLoading(true);
-      const fetchedCourse = coursesService.getCourse(courseId!);
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', courseId)
+        .single();
       
-      if (!fetchedCourse) {
+      if (error || !data) {
         toast({
           variant: "destructive",
           title: "خطا",
@@ -90,20 +94,20 @@ export default function CourseForm() {
         return;
       }
 
-      setCourse(fetchedCourse);
+      setCourse(data);
       setFormData({
-        title: fetchedCourse.title,
-        description: fetchedCourse.description || "",
-        image_url: fetchedCourse.image_url || "",
-        gallery_images: fetchedCourse.gallery_images || [],
-        price: fetchedCourse.price,
-        original_price: fetchedCourse.original_price || 0,
-        duration_hours: fetchedCourse.duration_hours || 0,
-        instructor_name: fetchedCourse.instructor_name || "",
-        level: fetchedCourse.level || "مبتدی",
-        course_type: fetchedCourse.course_type || "ویدیویی",
-        is_active: fetchedCourse.is_active,
-        is_new: fetchedCourse.is_new || false,
+        title: data.title,
+        description: data.description || "",
+        image_url: data.image_url || "",
+        gallery_images: data.gallery_images || [],
+        price: data.price || 0,
+        original_price: data.original_price || 0,
+        duration_hours: data.duration_hours || 0,
+        instructor_name: data.instructor_name || "",
+        level: data.level || "مبتدی",
+        course_type: data.course_type || "ویدیویی",
+        is_active: data.is_active,
+        is_new: data.is_new || false,
       });
     } catch (error) {
       console.error("خطا:", error);
@@ -157,40 +161,55 @@ export default function CourseForm() {
           continue;
         }
 
-        // Convert to base64 for storage
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const base64String = event.target?.result as string;
+        // Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `courses/${fileName}`;
 
-          if (isGallery) {
-            if (formData.gallery_images.length < 10) {
-              setFormData((prev) => ({
-                ...prev,
-                gallery_images: [...prev.gallery_images, base64String],
-              }));
-              toast({
-                title: "موفق",
-                description: "عكس گالری اضافه شد",
-              });
-            } else {
-              toast({
-                variant: "destructive",
-                title: "هشدار",
-                description: "حداکثر 10 عكس",
-              });
-            }
-          } else {
+        const { error: uploadError, data: uploadData } = await supabase.storage
+          .from('images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          toast({
+            variant: "destructive",
+            title: "خطا",
+            description: "خطا در آپلود عکس",
+          });
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('images')
+          .getPublicUrl(filePath);
+
+        if (isGallery) {
+          if (formData.gallery_images.length < 10) {
             setFormData((prev) => ({
               ...prev,
-              image_url: base64String,
+              gallery_images: [...prev.gallery_images, publicUrl],
             }));
             toast({
               title: "موفق",
-              description: "عكس اصلی اضافه شد",
+              description: "عكس گالری اضافه شد",
+            });
+          } else {
+            toast({
+              variant: "destructive",
+              title: "هشدار",
+              description: "حداکثر 10 عكس",
             });
           }
-        };
-        reader.readAsDataURL(file);
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            image_url: publicUrl,
+          }));
+          toast({
+            title: "موفق",
+            description: "عكس اصلی اضافه شد",
+          });
+        }
       }
     } catch (error) {
       console.error("خطا:", error);
@@ -231,11 +250,35 @@ export default function CourseForm() {
     setSaving(true);
 
     try {
+      const courseData = {
+        title: formData.title,
+        description: formData.description,
+        image_url: formData.image_url,
+        gallery_images: formData.gallery_images,
+        price: formData.price,
+        original_price: formData.original_price || null,
+        duration_hours: formData.duration_hours,
+        instructor_name: formData.instructor_name,
+        level: formData.level,
+        course_type: formData.course_type,
+        is_active: formData.is_active,
+        is_new: formData.is_new,
+      };
+
       if (courseId) {
-        coursesService.updateCourse(courseId, formData);
+        const { error } = await supabase
+          .from('courses')
+          .update(courseData)
+          .eq('id', courseId);
+        
+        if (error) throw error;
         toast({ title: "موفق", description: "دوره با موفقیت ویرایش شد" });
       } else {
-        coursesService.addCourse(formData);
+        const { error } = await supabase
+          .from('courses')
+          .insert([courseData]);
+        
+        if (error) throw error;
         toast({ title: "موفق", description: "دوره با موفقیت اضافه شد" });
       }
 
