@@ -30,7 +30,7 @@ import CourseForm from "./pages/admin/CourseForm";
 import AdminLessons from "./pages/admin/Lessons";
 import AdminEnrollments from "./pages/admin/Enrollments";
 import EnrollmentsOverview from "./pages/admin/EnrollmentsOverview";
-import SampleData from "./pages/admin/SampleData";
+
 import AdminBookings from "./pages/admin/Bookings";
 import AdminOrders from "./pages/admin/Orders";
 import AdminShippingMethods from "./pages/admin/ShippingMethods";
@@ -96,7 +96,7 @@ const App = () => (
                   <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
                   <Route path="courses/:courseId/enrollments" element={<AdminEnrollments />} />
                   <Route path="enrollments" element={<EnrollmentsOverview />} />
-                  <Route path="sample-data" element={<SampleData />} />
+                  
                   <Route path="bookings" element={<AdminBookings />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="shipping" element={<AdminShippingMethods />} />
