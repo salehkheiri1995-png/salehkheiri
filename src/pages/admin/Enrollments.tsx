@@ -15,7 +15,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { coursesService, enrollmentsService, Enrollment } from "@/services/coursesService";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,20 @@ interface Course {
   title: string;
 }
 
+interface Enrollment {
+  id: string;
+  course_id: string;
+  user_id: string;
+  enrolled_at: string;
+  progress_percent: number;
+  completed_at: string | null;
+  payment_status: string;
+  profile?: {
+    full_name: string | null;
+    phone: string | null;
+  };
+}
+
 export default function AdminEnrollments() {
   const { courseId } = useParams<{ courseId: string }>();
   const [course, setCourse] = useState<Course | null>(null);
@@ -41,9 +55,7 @@ export default function AdminEnrollments() {
   const [stats, setStats] = useState({ total: 0, completed: 0, in_progress: 0, not_started: 0, average_progress: 0 });
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    student_name: "",
-    student_email: "",
-    phone: "",
+    user_email: "",
   });
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -55,30 +67,53 @@ export default function AdminEnrollments() {
     }
   }, [courseId]);
 
-  const fetchCourse = () => {
+  const fetchCourse = async () => {
     try {
-      const data = coursesService.getCourse(courseId!);
+      const { data, error } = await supabase
+        .from('courses')
+        .select('id, title')
+        .eq('id', courseId)
+        .single();
+      
       if (data) {
-        setCourse({ id: data.id, title: data.title });
+        setCourse(data);
       }
     } catch (error) {
       console.error('خطا:', error);
     }
   };
 
-  const fetchEnrollments = () => {
+  const fetchEnrollments = async () => {
     try {
       setLoading(true);
-      const data = enrollmentsService.getEnrollmentsByCourse(courseId!);
-      setEnrollments(data);
-      const courseStats = enrollmentsService.getCourseStats(courseId!);
-      setStats({
-        total: courseStats.total_enrollments,
-        completed: courseStats.completed,
-        in_progress: courseStats.in_progress,
-        not_started: courseStats.not_started,
-        average_progress: courseStats.average_progress,
-      });
+      const { data, error } = await supabase
+        .from('course_enrollments')
+        .select(`
+          *,
+          profile:profiles(full_name, phone)
+        `)
+        .eq('course_id', courseId)
+        .order('enrolled_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const enrollmentData = (data || []).map(e => ({
+        ...e,
+        profile: Array.isArray(e.profile) ? e.profile[0] : e.profile
+      }));
+      
+      setEnrollments(enrollmentData);
+      
+      // Calculate stats
+      const total = enrollmentData.length;
+      const completed = enrollmentData.filter(e => e.completed_at !== null).length;
+      const in_progress = enrollmentData.filter(e => e.progress_percent > 0 && !e.completed_at).length;
+      const not_started = enrollmentData.filter(e => e.progress_percent === 0).length;
+      const average_progress = total > 0 
+        ? Math.round(enrollmentData.reduce((sum, e) => sum + (e.progress_percent || 0), 0) / total)
+        : 0;
+      
+      setStats({ total, completed, in_progress, not_started, average_progress });
     } catch (error) {
       console.error('خطا:', error);
     } finally {
@@ -91,31 +126,14 @@ export default function AdminEnrollments() {
     setSaving(true);
 
     try {
-      if (!formData.student_name.trim() || !formData.student_email.trim()) {
-        toast({
-          variant: "destructive",
-          title: "خطا",
-          description: "نام و ایمیل الزامی است",
-        });
-        setSaving(false);
-        return;
-      }
-
-      enrollmentsService.enroll({
-        course_id: courseId!,
-        student_name: formData.student_name,
-        student_email: formData.student_email,
-        phone: formData.phone || null,
-      });
-
+      // Note: In a real app, you'd look up the user by email
+      // For now, we'll show an error since we can't directly query auth.users
       toast({
-        title: "موفق",
-        description: "دانشجو تبدیل شد",
+        variant: "destructive",
+        title: "توجه",
+        description: "ثبت‌نام دستی فعلاً در دسترس نیست. کاربران باید از طریق سایت ثبت‌نام کنند.",
       });
-
       setIsDialogOpen(false);
-      setFormData({ student_name: "", student_email: "", phone: "" });
-      fetchEnrollments();
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -127,9 +145,15 @@ export default function AdminEnrollments() {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      enrollmentsService.deleteEnrollment(id);
+      const { error } = await supabase
+        .from('course_enrollments')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
       toast({
         title: "موفق",
         description: "ثبت‌نام حذف شد",
@@ -145,9 +169,20 @@ export default function AdminEnrollments() {
     }
   };
 
-  const updateProgress = (enrollmentId: string, progress: number) => {
+  const updateProgress = async (enrollmentId: string, progress: number) => {
     try {
-      enrollmentsService.updateProgress(enrollmentId, progress);
+      const updateData: any = { progress_percent: progress };
+      if (progress >= 100) {
+        updateData.completed_at = new Date().toISOString();
+      }
+      
+      const { error } = await supabase
+        .from('course_enrollments')
+        .update(updateData)
+        .eq('id', enrollmentId);
+      
+      if (error) throw error;
+      
       toast({
         title: "موفق",
         description: "پیشرفت به‌روزرسانی شد",
@@ -189,31 +224,13 @@ export default function AdminEnrollments() {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label>نام دانشجو</Label>
-                <Input
-                  value={formData.student_name}
-                  onChange={(e) => setFormData({ ...formData, student_name: e.target.value })}
-                  placeholder="نام و نام خانوادگی..."
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>ایمیل</Label>
+                <Label>ایمیل کاربر</Label>
                 <Input
                   type="email"
-                  value={formData.student_email}
-                  onChange={(e) => setFormData({ ...formData, student_email: e.target.value })}
+                  value={formData.user_email}
+                  onChange={(e) => setFormData({ ...formData, user_email: e.target.value })}
                   placeholder="example@email.com"
                   required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>تلفن (اختیاری)</Label>
-                <Input
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="09121234567"
-                  dir="ltr"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={saving}>
@@ -239,7 +256,7 @@ export default function AdminEnrollments() {
           <p className="text-3xl font-bold text-orange-600">{stats.in_progress}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/10 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
-          <p className="text-sm text-muted-foreground mb-1">بی احراز</p>
+          <p className="text-sm text-muted-foreground mb-1">شروع نکرده</p>
           <p className="text-3xl font-bold text-purple-600">{stats.not_started}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-900/10 rounded-xl p-4 border border-pink-200 dark:border-pink-800">
@@ -271,16 +288,12 @@ export default function AdminEnrollments() {
               {/* Student Info */}
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-lg">{enrollment.student_name}</h3>
+                  <h3 className="font-bold text-lg">{enrollment.profile?.full_name || 'کاربر'}</h3>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
-                    <a href={`mailto:${enrollment.student_email}`} className="flex items-center gap-1 hover:text-primary transition">
-                      <Mail className="w-4 h-4" />
-                      {enrollment.student_email}
-                    </a>
-                    {enrollment.phone && (
-                      <a href={`tel:${enrollment.phone}`} className="flex items-center gap-1 hover:text-primary transition">
+                    {enrollment.profile?.phone && (
+                      <a href={`tel:${enrollment.profile.phone}`} className="flex items-center gap-1 hover:text-primary transition">
                         <Phone className="w-4 h-4" />
-                        {enrollment.phone}
+                        {enrollment.profile.phone}
                       </a>
                     )}
                   </div>
@@ -288,20 +301,20 @@ export default function AdminEnrollments() {
 
                 {/* Status */}
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {enrollment.is_completed ? (
+                  {enrollment.completed_at ? (
                     <Badge className="bg-green-600 text-white">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       تمام شده
                     </Badge>
-                  ) : enrollment.progress > 0 ? (
+                  ) : enrollment.progress_percent > 0 ? (
                     <Badge className="bg-orange-600 text-white">
                       <TrendingUp className="w-3 h-3 mr-1" />
-                      {enrollment.progress}%
+                      {enrollment.progress_percent}%
                     </Badge>
                   ) : (
                     <Badge className="bg-gray-600 text-white">
                       <AlertCircle className="w-3 h-3 mr-1" />
-                      بی احراز
+                      شروع نکرده
                     </Badge>
                   )}
                 </div>
@@ -311,24 +324,24 @@ export default function AdminEnrollments() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">پیشرفت</span>
-                  <span className="font-medium">{enrollment.progress}%</span>
+                  <span className="font-medium">{enrollment.progress_percent}%</span>
                 </div>
-                <Progress value={enrollment.progress} className="h-2" />
+                <Progress value={enrollment.progress_percent} className="h-2" />
               </div>
 
               {/* Actions */}
               <div className="flex items-center justify-between gap-2 pt-2 border-t border-border">
                 <div className="text-xs text-muted-foreground">
                   ثبت‌نام: {new Date(enrollment.enrolled_at).toLocaleDateString('fa-IR')}
-                  {enrollment.completion_date && ` • تاریخ پایان: ${new Date(enrollment.completion_date).toLocaleDateString('fa-IR')}`}
+                  {enrollment.completed_at && ` • تاریخ پایان: ${new Date(enrollment.completed_at).toLocaleDateString('fa-IR')}`}
                 </div>
                 <div className="flex items-center gap-2">
-                  {!enrollment.is_completed && (
+                  {!enrollment.completed_at && (
                     <>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => updateProgress(enrollment.id, Math.min(enrollment.progress + 25, 100))}
+                        onClick={() => updateProgress(enrollment.id, Math.min(enrollment.progress_percent + 25, 100))}
                       >
                         +25%
                       </Button>
