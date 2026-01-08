@@ -9,12 +9,33 @@ const corsHeaders = {
 // Connection pool for better performance
 let pool: Pool | null = null;
 
+function sanitizeDatabaseUrl(raw: string): string {
+  // Secrets sometimes get pasted with quotes or whitespace/newlines
+  let url = raw.trim();
+  url = url.replace(/^"(.+)"$/, "$1");
+  url = url.replace(/^'(.+)'$/, "$1");
+  // Some providers use postgresql:// which is equivalent
+  url = url.replace(/^postgresql:\/\//i, "postgres://");
+  return url;
+}
+
 function getPool(): Pool {
   if (!pool) {
-    const databaseUrl = Deno.env.get("EXTERNAL_DATABASE_URL");
-    if (!databaseUrl) {
+    const raw = Deno.env.get("EXTERNAL_DATABASE_URL");
+    if (!raw) {
       throw new Error("EXTERNAL_DATABASE_URL is not set");
     }
+
+    const databaseUrl = sanitizeDatabaseUrl(raw);
+
+    // Validate format early with safe debug info (no credentials)
+    try {
+      const u = new URL(databaseUrl);
+      console.log("External DB URL:", `${u.protocol}//${u.hostname}${u.port ? ":" + u.port : ""}${u.pathname}`);
+    } catch {
+      throw new Error("EXTERNAL_DATABASE_URL is invalid (could not parse)");
+    }
+
     pool = new Pool(databaseUrl, 3, true);
   }
   return pool;
