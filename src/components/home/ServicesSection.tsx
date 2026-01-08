@@ -6,6 +6,7 @@ import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditableText } from "@/components/visual-editor/EditableText";
 
 export function ServicesSection() {
   const { data: settings } = useSalonSettings();
@@ -25,16 +26,6 @@ export function ServicesSection() {
     },
   });
 
-  const parseTitle = (title: string) => {
-    const match = title.match(/^(.+?)\s+(\S+)$/);
-    if (match) {
-      return { main: match[1], highlight: match[2] };
-    }
-    return { main: title, highlight: "" };
-  };
-
-  const titleParts = parseTitle(settings?.home_services_title || "خدمات زیبایی حرفه‌ای");
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
@@ -49,13 +40,28 @@ export function ServicesSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <span className="text-primary font-medium mb-4 block">خدمات ما</span>
+          <EditableText
+            pageKey="home"
+            contentKey="services_label"
+            defaultValue="خدمات ما"
+            as="span"
+            className="text-primary font-medium mb-4 block"
+          />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span>
+            <EditableText
+              pageKey="home"
+              contentKey="services_title"
+              defaultValue={settings?.home_services_title || "خدمات زیبایی حرفه‌ای"}
+              as="span"
+            />
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            {settings?.home_services_subtitle || "با تیم متخصص ما، بهترین خدمات زیبایی را تجربه کنید"}
-          </p>
+          <EditableText
+            pageKey="home"
+            contentKey="services_subtitle"
+            defaultValue={settings?.home_services_subtitle || "با تیم متخصص ما، بهترین خدمات زیبایی را تجربه کنید"}
+            as="p"
+            className="text-muted-foreground max-w-2xl mx-auto"
+          />
         </motion.div>
 
         {/* Services Grid */}
