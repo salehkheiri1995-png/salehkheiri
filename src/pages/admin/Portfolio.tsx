@@ -34,7 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { 
   Plus, Pencil, Trash2, Camera, GripVertical, AlertCircle, 
-  Filter, Video, Eye, Heart, Tag, Palette, Settings
+  Filter, Video, Eye, Heart, Tag, Palette, Settings, LayoutGrid
 } from "lucide-react";
 import { motion, Reorder } from "framer-motion";
 
@@ -470,12 +470,12 @@ export default function AdminPortfolio() {
         <TabsContent value="items" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <CardTitle>لیست نمونه‌کارها</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-muted-foreground" />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <Filter className="w-4 h-4 ml-2" />
                       <SelectValue placeholder="فیلتر دسته‌بندی" />
                     </SelectTrigger>
                     <SelectContent>
@@ -493,164 +493,253 @@ export default function AdminPortfolio() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button onClick={() => openDialog()}>
+                  <Button onClick={() => openDialog()} className="w-full sm:w-auto">
                     <Plus className="w-4 h-4 ml-2" />
                     افزودن نمونه‌کار
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12"></TableHead>
-                    <TableHead className="w-20">رسانه</TableHead>
-                    <TableHead>عنوان</TableHead>
-                    <TableHead>دسته‌بندی</TableHead>
-                    <TableHead>آمار</TableHead>
-                    <TableHead>وضعیت</TableHead>
-                    <TableHead className="text-left">عملیات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8">
-                        در حال بارگذاری...
-                      </TableCell>
+            <CardContent className="overflow-x-auto">
+              <div className="w-full min-w-max">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="w-8 text-center">ترتیب</TableHead>
+                      <TableHead className="w-20">رسانه</TableHead>
+                      <TableHead className="min-w-[250px]">عنوان</TableHead>
+                      <TableHead className="min-w-[150px]">دسته‌بندی</TableHead>
+                      <TableHead className="text-center">آمار</TableHead>
+                      <TableHead className="text-center">وضعیت</TableHead>
+                      <TableHead className="text-center">عملیات</TableHead>
                     </TableRow>
-                  ) : orderedItems.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                        {selectedCategory === "all" 
-                          ? "نمونه‌کاری یافت نشد" 
-                          : `نمونه‌کاری در دسته ${getCategoryLabel(selectedCategory)} یافت نشد`
-                        }
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    <Reorder.Group
-                      as="tbody"
-                      axis="y"
-                      values={orderedItems}
-                      onReorder={handleReorder}
-                      className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
-                    >
-                      {orderedItems.map((item) => (
-                        <Reorder.Item
-                          key={item.id}
-                          value={item}
-                          as="tr"
-                          className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                          whileDrag={{
-                            scale: 1.02,
-                            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-                            backgroundColor: "rgba(var(--primary), 0.05)",
-                          }}
-                        >
-                          <TableCell>
-                            <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
-                          </TableCell>
-                          <TableCell>
-                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted relative">
-                              {item.image_url ? (
-                                <>
-                                  <img
-                                    src={item.image_url}
-                                    alt={item.title}
-                                    className="w-full h-full object-cover"
-                                  />
-                                  {item.video_url && (
-                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                                      <Video className="w-6 h-6 text-white" />
-                                    </div>
-                                  )}
-                                </>
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  {item.video_url ? (
-                                    <Video className="w-6 h-6 text-muted-foreground" />
-                                  ) : (
-                                    <Camera className="w-6 h-6 text-muted-foreground" />
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">{item.title}</p>
-                              {item.description && (
-                                <p className="text-sm text-muted-foreground line-clamp-1">
-                                  {item.description}
-                                </p>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant="secondary"
-                              style={{ 
-                                backgroundColor: `${getCategoryColor(item.category)}20`,
-                                color: getCategoryColor(item.category),
-                                borderColor: getCategoryColor(item.category)
-                              }}
-                            >
-                              {getCategoryLabel(item.category)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Eye className="w-3 h-3" />
-                                {item.views_count || 0}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Heart className="w-3 h-3" />
-                                {item.likes_count || 0}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Switch
-                              checked={item.is_active}
-                              onCheckedChange={(checked) => {
-                                toggleActiveMutation.mutate({ id: item.id, is_active: checked });
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openDialog(item)}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive"
-                                onClick={() => {
-                                  if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
-                                    deleteMutation.mutate(item.id);
-                                  }
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          در حال بارگذاری...
+                        </TableCell>
+                      </TableRow>
+                    ) : orderedItems.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          <div className="flex items-center justify-center gap-2">
+                            <AlertCircle className="w-4 h-4" />
+                            {selectedCategory === "all" 
+                              ? "نمونه‌کاری یافت نشد" 
+                              : `نمونه‌کاری در دسته ${getCategoryLabel(selectedCategory)} یافت نشد`
+                            }
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      <Reorder.Group
+                        as="tbody"
+                        axis="y"
+                        values={orderedItems}
+                        onReorder={handleReorder}
+                        className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
+                      >
+                        {orderedItems.map((item, index) => (
+                          <Reorder.Item
+                            key={item.id}
+                            value={item}
+                            as="tr"
+                            className="border-b transition-colors hover:bg-muted/50"
+                            whileDrag={{
+                              scale: 1.02,
+                              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                              backgroundColor: "rgba(99, 102, 241, 0.05)",
+                            }}
+                          >
+                            {/* ترتیب */}
+                            <TableCell className="text-center w-8">
+                              <div className="flex items-center justify-center">
+                                <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                              </div>
+                            </TableCell>
+
+                            {/* رسانه */}
+                            <TableCell className="w-20">
+                              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                                {item.image_url ? (
+                                  <div className="relative w-full h-full">
+                                    <img
+                                      src={item.image_url}
+                                      alt={item.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                    {item.video_url && (
+                                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                        <Video className="w-5 h-5 text-white" />
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                                    {item.video_url ? (
+                                      <Video className="w-6 h-6 text-muted-foreground" />
+                                    ) : (
+                                      <Camera className="w-6 h-6 text-muted-foreground" />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+
+                            {/* عنوان و توضیح */}
+                            <TableCell>
+                              <div className="space-y-1">
+                                <p className="font-medium line-clamp-1">{item.title}</p>
+                                {item.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-1">
+                                    {item.description}
+                                  </p>
+                                )}
+                              </div>
+                            </TableCell>
+
+                            {/* دسته‌بندی */}
+                            <TableCell>
+                              <Badge 
+                                variant="outline"
+                                className="whitespace-nowrap"
+                                style={{ 
+                                  backgroundColor: `${getCategoryColor(item.category)}15`,
+                                  borderColor: getCategoryColor(item.category),
+                                  color: getCategoryColor(item.category),
                                 }}
                               >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </Reorder.Item>
-                      ))}
-                    </Reorder.Group>
-                  )}
-                </TableBody>
-              </Table>
+                                {getCategoryLabel(item.category)}
+                              </Badge>
+                            </TableCell>
+
+                            {/* آمار */}
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-3 text-sm">
+                                <span className="flex items-center gap-1 whitespace-nowrap">
+                                  <Eye className="w-3 h-3" />
+                                  <span className="text-xs">{item.views_count || 0}</span>
+                                </span>
+                                <span className="flex items-center gap-1 whitespace-nowrap">
+                                  <Heart className="w-3 h-3" />
+                                  <span className="text-xs">{item.likes_count || 0}</span>
+                                </span>
+                              </div>
+                            </TableCell>
+
+                            {/* وضعیت */}
+                            <TableCell className="text-center">
+                              <Switch
+                                checked={item.is_active}
+                                onCheckedChange={(checked) => {
+                                  toggleActiveMutation.mutate({ id: item.id, is_active: checked });
+                                }}
+                              />
+                            </TableCell>
+
+                            {/* عملیات */}
+                            <TableCell>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => openDialog(item)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  onClick={() => {
+                                    if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
+                                      deleteMutation.mutate(item.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </Reorder.Item>
+                        ))}
+                      </Reorder.Group>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
+
+          {/* Categories Reference Table */}
+          {categories.length > 0 && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <LayoutGrid className="w-5 h-5" />
+                  جدول مرجع دسته‌بندی‌ها
+                </CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  این جدول نشان می‌دهد که هر لیبل مربوط به کدام دسته‌بندی است
+                </p>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>نام دسته‌بندی</TableHead>
+                      <TableHead>شناسه (Slug)</TableHead>
+                      <TableHead>رنگ</TableHead>
+                      <TableHead className="text-center">تعداد نمونه‌کار</TableHead>
+                      <TableHead className="text-center">وضعیت</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.map((category) => (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-full" 
+                              style={{ backgroundColor: category.color }}
+                            />
+                            <span className="font-medium">{category.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <code className="text-xs bg-muted px-2 py-1 rounded">
+                            {category.slug}
+                          </code>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-6 h-6 rounded border" 
+                              style={{ backgroundColor: category.color }}
+                            />
+                            <code className="text-xs">{category.color}</code>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary">
+                            {portfolioItems?.filter(p => p.category === category.slug).length || 0}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={category.is_active ? "default" : "secondary"}>
+                            {category.is_active ? "فعال" : "غیرفعال"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Categories Tab */}
