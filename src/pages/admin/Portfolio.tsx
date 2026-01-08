@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -28,9 +29,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { Plus, Pencil, Trash2, Camera, GripVertical, AlertCircle, Filter } from "lucide-react";
+import { 
+  Plus, Pencil, Trash2, Camera, GripVertical, AlertCircle, 
+  Filter, Video, Eye, Heart, Tag, Palette, Settings
+} from "lucide-react";
 import { motion, Reorder } from "framer-motion";
 
 interface PortfolioItem {
@@ -38,168 +43,75 @@ interface PortfolioItem {
   title: string;
   description: string | null;
   image_url: string | null;
+  video_url: string | null;
   category: string | null;
   is_active: boolean;
   order_index: number;
+  views_count: number;
+  likes_count: number;
 }
 
-const categories = [
-  { id: "hair", label: "مو" },
-  { id: "makeup", label: "آرایش" },
-  { id: "nail", label: "ناخن" },
-  { id: "skin", label: "پوست" },
-];
-
-// Sample data - fallback when DB is empty
-const samplePortfolioData = [
-  {
-    id: "sample-1",
-    title: "آرایش عروس لاکچری",
-    category: "makeup",
-    description: "آرایش مدرن و الگان برای عروسی",
-    image_url: "https://images.unsplash.com/photo-1607746882042-f3978991f23e?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 1,
-    is_active: true,
-  },
-  {
-    id: "sample-2",
-    title: "رنگ و مو طبیعی",
-    category: "hair",
-    description: "سبک مو زنانه مدرن",
-    image_url: "https://images.unsplash.com/photo-1562599810-d0d1c27c9ae5?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 2,
-    is_active: true,
-  },
-  {
-    id: "sample-3",
-    title: "طراحی ناخن ژله‌ای",
-    category: "nail",
-    description: "رنگ های مختلف و طرح های جدید",
-    image_url: "https://images.unsplash.com/photo-1604654894610-df63bc536371?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 3,
-    is_active: true,
-  },
-  {
-    id: "sample-4",
-    title: "درمان پوست صورت",
-    category: "skin",
-    description: "تمیزکاری و درمان پوست حساس",
-    image_url: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 4,
-    is_active: true,
-  },
-  {
-    id: "sample-5",
-    title: "موج و فر طبیعی",
-    category: "hair",
-    description: "بوکل های صحیح و طبیعی",
-    image_url: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 5,
-    is_active: true,
-  },
-  {
-    id: "sample-6",
-    title: "آرایش شام برای مهمانی",
-    category: "makeup",
-    description: "آرایش درخشان برای شب",
-    image_url: "https://images.unsplash.com/photo-1529148482759-b3997e4ea767?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 6,
-    is_active: true,
-  },
-  {
-    id: "sample-7",
-    title: "طراحی ناخن مینیمالیست",
-    category: "nail",
-    description: "طرح ساده و شیک",
-    image_url: "https://images.unsplash.com/photo-1610992015732-2449ec28227c?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 7,
-    is_active: true,
-  },
-  {
-    id: "sample-8",
-    title: "بلیچ و رنگ مو",
-    category: "hair",
-    description: "تبدیل رنگ مو به سایه‌های روشن",
-    image_url: "https://images.unsplash.com/photo-1563458500-4b20c6cb4c9b?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 8,
-    is_active: true,
-  },
-  {
-    id: "sample-9",
-    title: "پاکسازی و مراقبت پوست",
-    category: "skin",
-    description: "پروتکل مراقبت کامل پوست",
-    image_url: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 9,
-    is_active: true,
-  },
-  {
-    id: "sample-10",
-    title: "آرایش روزمره طبیعی",
-    category: "makeup",
-    description: "آرایش روزانه برای محیط کار",
-    image_url: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 10,
-    is_active: true,
-  },
-  {
-    id: "sample-11",
-    title: "ناخن کریستالی براق",
-    category: "nail",
-    description: "ناخن براق و درخشان",
-    image_url: "https://images.unsplash.com/photo-1600797260371-e80fcca6a472?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 11,
-    is_active: true,
-  },
-  {
-    id: "sample-12",
-    title: "اصلاح ابرو حرفه‌ای",
-    category: "makeup",
-    description: "فرم‌دهی و رنگ ابرو",
-    image_url: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?ixlib=rb-4.0.3&w=500&h=500&fit=crop",
-    order_index: 12,
-    is_active: true,
-  },
-];
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  icon: string;
+  order_index: number;
+  is_active: boolean;
+}
 
 export default function AdminPortfolio() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
-  const [isSampleData, setIsSampleData] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [orderedItems, setOrderedItems] = useState<PortfolioItem[]>([]);
+  const [activeTab, setActiveTab] = useState("items");
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     image_url: "",
+    video_url: "",
     category: "",
     is_active: true,
     order_index: 0,
   });
+  const [categoryFormData, setCategoryFormData] = useState({
+    name: "",
+    slug: "",
+    color: "#6366f1",
+    icon: "folder",
+    order_index: 0,
+    is_active: true,
+  });
 
+  // Fetch categories from database
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ["portfolio-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("portfolio_categories")
+        .select("*")
+        .order("order_index");
+      if (error) throw error;
+      return data as Category[];
+    },
+  });
+
+  // Fetch portfolio items
   const { data: portfolioItems, isLoading } = useQuery({
     queryKey: ["admin-portfolio"],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from("portfolio")
-          .select("*")
-          .order("order_index");
-        
-        // اگر DB خالی بود، Sample Data برگردان
-        if (error || !data || data.length === 0) {
-          setIsSampleData(true);
-          return samplePortfolioData as PortfolioItem[];
-        }
-        
-        setIsSampleData(false);
-        return data as PortfolioItem[];
-      } catch (err) {
-        setIsSampleData(true);
-        return samplePortfolioData as PortfolioItem[];
-      }
+      const { data, error } = await supabase
+        .from("portfolio")
+        .select("*")
+        .order("order_index");
+      if (error) throw error;
+      return data as PortfolioItem[];
     },
   });
 
@@ -213,9 +125,9 @@ export default function AdminPortfolio() {
     }
   }, [portfolioItems, selectedCategory]);
 
+  // Mutations for portfolio items
   const updateOrderMutation = useMutation({
     mutationFn: async (items: PortfolioItem[]) => {
-      // Update order_index for all reordered items
       const updates = items.map((item, index) => ({
         id: item.id,
         order_index: index,
@@ -240,10 +152,7 @@ export default function AdminPortfolio() {
 
   const handleReorder = (newOrder: PortfolioItem[]) => {
     setOrderedItems(newOrder);
-    // Only update if not sample data
-    if (!isSampleData) {
-      updateOrderMutation.mutate(newOrder);
-    }
+    updateOrderMutation.mutate(newOrder);
   };
 
   const createMutation = useMutation({
@@ -303,6 +212,55 @@ export default function AdminPortfolio() {
     },
   });
 
+  // Category mutations
+  const createCategoryMutation = useMutation({
+    mutationFn: async (data: typeof categoryFormData) => {
+      const { error } = await supabase.from("portfolio_categories").insert([data]);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portfolio-categories"] });
+      toast({ title: "دسته‌بندی با موفقیت اضافه شد" });
+      closeCategoryDialog();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "خطا در افزودن دسته‌بندی", 
+        description: error.message.includes("duplicate") ? "این دسته‌بندی قبلاً وجود دارد" : undefined,
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: typeof categoryFormData }) => {
+      const { error } = await supabase.from("portfolio_categories").update(data).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portfolio-categories"] });
+      toast({ title: "دسته‌بندی با موفقیت ویرایش شد" });
+      closeCategoryDialog();
+    },
+    onError: () => {
+      toast({ title: "خطا در ویرایش دسته‌بندی", variant: "destructive" });
+    },
+  });
+
+  const deleteCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("portfolio_categories").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["portfolio-categories"] });
+      toast({ title: "دسته‌بندی با موفقیت حذف شد" });
+    },
+    onError: () => {
+      toast({ title: "خطا در حذف دسته‌بندی", variant: "destructive" });
+    },
+  });
+
   const openDialog = (item?: PortfolioItem) => {
     if (item) {
       setEditingItem(item);
@@ -310,6 +268,7 @@ export default function AdminPortfolio() {
         title: item.title,
         description: item.description || "",
         image_url: item.image_url || "",
+        video_url: item.video_url || "",
         category: item.category || "",
         is_active: item.is_active,
         order_index: item.order_index,
@@ -320,6 +279,7 @@ export default function AdminPortfolio() {
         title: "",
         description: "",
         image_url: "",
+        video_url: "",
         category: "",
         is_active: true,
         order_index: portfolioItems?.length || 0,
@@ -335,9 +295,48 @@ export default function AdminPortfolio() {
       title: "",
       description: "",
       image_url: "",
+      video_url: "",
       category: "",
       is_active: true,
       order_index: 0,
+    });
+  };
+
+  const openCategoryDialog = (category?: Category) => {
+    if (category) {
+      setEditingCategory(category);
+      setCategoryFormData({
+        name: category.name,
+        slug: category.slug,
+        color: category.color,
+        icon: category.icon,
+        order_index: category.order_index,
+        is_active: category.is_active,
+      });
+    } else {
+      setEditingCategory(null);
+      setCategoryFormData({
+        name: "",
+        slug: "",
+        color: "#6366f1",
+        icon: "folder",
+        order_index: categories.length,
+        is_active: true,
+      });
+    }
+    setIsCategoryDialogOpen(true);
+  };
+
+  const closeCategoryDialog = () => {
+    setIsCategoryDialogOpen(false);
+    setEditingCategory(null);
+    setCategoryFormData({
+      name: "",
+      slug: "",
+      color: "#6366f1",
+      icon: "folder",
+      order_index: 0,
+      is_active: true,
     });
   };
 
@@ -350,44 +349,53 @@ export default function AdminPortfolio() {
     }
   };
 
-  const getCategoryLabel = (categoryId: string | null) => {
-    return categories.find((c) => c.id === categoryId)?.label || "-";
+  const handleCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Auto-generate slug from name if empty
+    const slug = categoryFormData.slug || categoryFormData.name.toLowerCase().replace(/\s+/g, '-');
+    const dataToSubmit = { ...categoryFormData, slug };
+    
+    if (editingCategory) {
+      updateCategoryMutation.mutate({ id: editingCategory.id, data: dataToSubmit });
+    } else {
+      createCategoryMutation.mutate(dataToSubmit);
+    }
+  };
+
+  const getCategoryLabel = (categorySlug: string | null) => {
+    return categories.find((c) => c.slug === categorySlug)?.name || categorySlug || "-";
+  };
+
+  const getCategoryColor = (categorySlug: string | null) => {
+    return categories.find((c) => c.slug === categorySlug)?.color || "#6366f1";
   };
 
   const filteredStats = {
     total: portfolioItems?.length || 0,
     active: portfolioItems?.filter((p) => p.is_active).length || 0,
-    byCategory: categories.map(cat => ({
-      ...cat,
-      count: portfolioItems?.filter(p => p.category === cat.id).length || 0,
-    })),
+    withVideo: portfolioItems?.filter((p) => p.video_url).length || 0,
+    totalViews: portfolioItems?.reduce((sum, p) => sum + (p.views_count || 0), 0) || 0,
   };
+
+  const colorOptions = [
+    { value: "#8B5CF6", label: "بنفش" },
+    { value: "#EC4899", label: "صورتی" },
+    { value: "#F59E0B", label: "نارنجی" },
+    { value: "#10B981", label: "سبز" },
+    { value: "#3B82F6", label: "آبی" },
+    { value: "#EF4444", label: "قرمز" },
+    { value: "#6366f1", label: "ایندیگو" },
+    { value: "#14B8A6", label: "فیروزه‌ای" },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">نمونه‌کارها</h1>
-          <p className="text-muted-foreground">مدیریت نمونه‌کارها و گالری تصاویر</p>
+          <p className="text-muted-foreground">مدیریت نمونه‌کارها، ویدیوها و دسته‌بندی‌ها</p>
         </div>
-        <Button onClick={() => openDialog()}>
-          <Plus className="w-4 h-4 ml-2" />
-          افزودن نمونه‌کار
-        </Button>
       </div>
-
-      {/* Warning if sample data */}
-      {isSampleData && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <h3 className="font-medium text-amber-900">Sample Data در حال نمایش</h3>
-            <p className="text-sm text-amber-800 mt-1">
-              Database هنوز آیتم ندارد. برای مشاهده نمونه از Sample Data استفاده می‌شود. یک آیتم جدید اضافه کنید تا Database شروع شود!
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -408,7 +416,7 @@ export default function AdminPortfolio() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                <Camera className="w-5 h-5 text-green-500" />
+                <Eye className="w-5 h-5 text-green-500" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{filteredStats.active}</p>
@@ -417,182 +425,317 @@ export default function AdminPortfolio() {
             </div>
           </CardContent>
         </Card>
-        {filteredStats.byCategory.slice(0, 2).map((cat) => (
-          <Card key={cat.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <Camera className="w-5 h-5 text-blue-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{cat.count}</p>
-                  <p className="text-xs text-muted-foreground">{cat.label}</p>
-                </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <Video className="w-5 h-5 text-purple-500" />
               </div>
-            </CardContent>
-          </Card>
-        ))}
+              <div>
+                <p className="text-2xl font-bold">{filteredStats.withVideo}</p>
+                <p className="text-xs text-muted-foreground">دارای ویدیو</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Tag className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{categories.length}</p>
+                <p className="text-xs text-muted-foreground">دسته‌بندی</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Filter Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>لیست نمونه‌کارها</CardTitle>
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-muted-foreground" />
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="فیلتر دسته‌بندی" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">همه دسته‌ها</SelectItem>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12"></TableHead>
-                <TableHead className="w-20">تصویر</TableHead>
-                <TableHead>عنوان</TableHead>
-                <TableHead>دسته‌بندی</TableHead>
-                <TableHead>وضعیت</TableHead>
-                <TableHead className="text-left">عملیات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    در حال بارگذاری...
-                  </TableCell>
-                </TableRow>
-              ) : orderedItems.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {selectedCategory === "all" 
-                      ? "نمونه‌کاری یافت نشد" 
-                      : `نمونه‌کاری در دسته ${getCategoryLabel(selectedCategory)} یافت نشد`
-                    }
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <Reorder.Group
-                  as="tbody"
-                  axis="y"
-                  values={orderedItems}
-                  onReorder={handleReorder}
-                  className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
-                >
-                  {orderedItems.map((item) => (
-                    <Reorder.Item
-                      key={item.id}
-                      value={item}
-                      as="tr"
-                      className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                      whileDrag={{
-                        scale: 1.02,
-                        boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-                        backgroundColor: "rgba(var(--primary), 0.05)",
-                      }}
-                    >
-                      <TableCell>
-                        <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
-                      </TableCell>
-                      <TableCell>
-                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Camera className="w-6 h-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{item.title}</p>
-                          {item.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {item.description}
-                            </p>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{getCategoryLabel(item.category)}</TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={item.is_active}
-                          onCheckedChange={(checked) => {
-                            // اگر Sample Data است، نمیتوان تغییر داد
-                            if (item.id.startsWith("sample-")) {
-                              toast({
-                                title: "نمیتوانید Sample Data را تغییر دهید",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
-                            toggleActiveMutation.mutate({ id: item.id, is_active: checked });
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openDialog(item)}
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive"
-                            onClick={() => {
-                              // اگر Sample Data است، نمیتوان حذف کرد
-                              if (item.id.startsWith("sample-")) {
-                                toast({
-                                  title: "نمیتوانید Sample Data را حذف دهید",
-                                  variant: "destructive",
-                                });
-                                return;
-                              }
-                              if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
-                                deleteMutation.mutate(item.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </Reorder.Item>
-                  ))}
-                </Reorder.Group>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="items" className="flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            نمونه‌کارها
+          </TabsTrigger>
+          <TabsTrigger value="categories" className="flex items-center gap-2">
+            <Tag className="w-4 h-4" />
+            دسته‌بندی‌ها
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Dialog */}
+        {/* Portfolio Items Tab */}
+        <TabsContent value="items" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>لیست نمونه‌کارها</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-muted-foreground" />
+                  <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="فیلتر دسته‌بندی" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه دسته‌ها</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.slug}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: cat.color }}
+                            />
+                            {cat.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button onClick={() => openDialog()}>
+                    <Plus className="w-4 h-4 ml-2" />
+                    افزودن نمونه‌کار
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="w-20">رسانه</TableHead>
+                    <TableHead>عنوان</TableHead>
+                    <TableHead>دسته‌بندی</TableHead>
+                    <TableHead>آمار</TableHead>
+                    <TableHead>وضعیت</TableHead>
+                    <TableHead className="text-left">عملیات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {isLoading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        در حال بارگذاری...
+                      </TableCell>
+                    </TableRow>
+                  ) : orderedItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        {selectedCategory === "all" 
+                          ? "نمونه‌کاری یافت نشد" 
+                          : `نمونه‌کاری در دسته ${getCategoryLabel(selectedCategory)} یافت نشد`
+                        }
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <Reorder.Group
+                      as="tbody"
+                      axis="y"
+                      values={orderedItems}
+                      onReorder={handleReorder}
+                      className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
+                    >
+                      {orderedItems.map((item) => (
+                        <Reorder.Item
+                          key={item.id}
+                          value={item}
+                          as="tr"
+                          className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                          whileDrag={{
+                            scale: 1.02,
+                            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                            backgroundColor: "rgba(var(--primary), 0.05)",
+                          }}
+                        >
+                          <TableCell>
+                            <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                          </TableCell>
+                          <TableCell>
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted relative">
+                              {item.image_url ? (
+                                <>
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  {item.video_url && (
+                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                      <Video className="w-6 h-6 text-white" />
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  {item.video_url ? (
+                                    <Video className="w-6 h-6 text-muted-foreground" />
+                                  ) : (
+                                    <Camera className="w-6 h-6 text-muted-foreground" />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{item.title}</p>
+                              {item.description && (
+                                <p className="text-sm text-muted-foreground line-clamp-1">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant="secondary"
+                              style={{ 
+                                backgroundColor: `${getCategoryColor(item.category)}20`,
+                                color: getCategoryColor(item.category),
+                                borderColor: getCategoryColor(item.category)
+                              }}
+                            >
+                              {getCategoryLabel(item.category)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Eye className="w-3 h-3" />
+                                {item.views_count || 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3 h-3" />
+                                {item.likes_count || 0}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Switch
+                              checked={item.is_active}
+                              onCheckedChange={(checked) => {
+                                toggleActiveMutation.mutate({ id: item.id, is_active: checked });
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openDialog(item)}
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive"
+                                onClick={() => {
+                                  if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
+                                    deleteMutation.mutate(item.id);
+                                  }
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </Reorder.Item>
+                      ))}
+                    </Reorder.Group>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Categories Tab */}
+        <TabsContent value="categories" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>مدیریت دسته‌بندی‌ها</CardTitle>
+                <Button onClick={() => openCategoryDialog()}>
+                  <Plus className="w-4 h-4 ml-2" />
+                  افزودن دسته‌بندی
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {categoriesLoading ? (
+                <div className="text-center py-8">در حال بارگذاری...</div>
+              ) : categories.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  دسته‌بندی‌ای یافت نشد
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categories.map((category) => (
+                    <motion.div
+                      key={category.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="border rounded-lg p-4 relative group"
+                      style={{ borderColor: `${category.color}40` }}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div 
+                          className="w-10 h-10 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: `${category.color}20` }}
+                        >
+                          <Tag className="w-5 h-5" style={{ color: category.color }} />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{category.name}</h3>
+                          <p className="text-sm text-muted-foreground">{category.slug}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <Badge variant={category.is_active ? "default" : "secondary"}>
+                          {category.is_active ? "فعال" : "غیرفعال"}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          {portfolioItems?.filter(p => p.category === category.slug).length || 0} نمونه‌کار
+                        </span>
+                      </div>
+                      <div className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => openCategoryDialog(category)}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => {
+                            if (confirm("آیا از حذف این دسته‌بندی مطمئن هستید؟")) {
+                              deleteCategoryMutation.mutate(category.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Portfolio Item Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingItem ? "ویرایش نمونه‌کار" : "افزودن نمونه‌کار جدید"}
@@ -606,6 +749,19 @@ export default function AdminPortfolio() {
                 onChange={(url) => setFormData({ ...formData, image_url: url })}
                 folder="portfolio"
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="video_url">لینک ویدیو (اختیاری)</Label>
+              <Input
+                id="video_url"
+                value={formData.video_url}
+                onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                placeholder="https://example.com/video.mp4"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">
+                لینک مستقیم ویدیو یا لینک یوتیوب/آپارات
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="title">عنوان</Label>
@@ -636,23 +792,18 @@ export default function AdminPortfolio() {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.label}
+                    <SelectItem key={cat.id} value={cat.slug}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: cat.color }}
+                        />
+                        {cat.name}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="order">ترتیب نمایش</Label>
-              <Input
-                id="order"
-                type="number"
-                value={formData.order_index}
-                onChange={(e) =>
-                  setFormData({ ...formData, order_index: parseInt(e.target.value) || 0 })
-                }
-              />
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="is_active">فعال</Label>
@@ -669,6 +820,78 @@ export default function AdminPortfolio() {
                 {editingItem ? "ذخیره تغییرات" : "افزودن"}
               </Button>
               <Button type="button" variant="outline" onClick={closeDialog}>
+                انصراف
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Category Dialog */}
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingCategory ? "ویرایش دسته‌بندی" : "افزودن دسته‌بندی جدید"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCategorySubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="cat_name">نام دسته‌بندی</Label>
+              <Input
+                id="cat_name"
+                value={categoryFormData.name}
+                onChange={(e) => setCategoryFormData({ ...categoryFormData, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cat_slug">شناسه (Slug)</Label>
+              <Input
+                id="cat_slug"
+                value={categoryFormData.slug}
+                onChange={(e) => setCategoryFormData({ ...categoryFormData, slug: e.target.value })}
+                placeholder="auto-generated"
+                dir="ltr"
+              />
+              <p className="text-xs text-muted-foreground">
+                اگر خالی بگذارید، خودکار از نام ساخته می‌شود
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>رنگ</Label>
+              <div className="flex flex-wrap gap-2">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color.value}
+                    type="button"
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      categoryFormData.color === color.value 
+                        ? "border-foreground scale-110" 
+                        : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                    onClick={() => setCategoryFormData({ ...categoryFormData, color: color.value })}
+                    title={color.label}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="cat_active">فعال</Label>
+              <Switch
+                id="cat_active"
+                checked={categoryFormData.is_active}
+                onCheckedChange={(checked) =>
+                  setCategoryFormData({ ...categoryFormData, is_active: checked })
+                }
+              />
+            </div>
+            <div className="flex gap-2 pt-4">
+              <Button type="submit" className="flex-1">
+                {editingCategory ? "ذخیره تغییرات" : "افزودن"}
+              </Button>
+              <Button type="button" variant="outline" onClick={closeCategoryDialog}>
                 انصراف
               </Button>
             </div>
