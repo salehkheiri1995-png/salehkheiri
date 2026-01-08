@@ -21,7 +21,39 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { coursesService, lessonsService, enrollmentsService, Course, Lesson } from "@/services/coursesService";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  price: number;
+  original_price: number | null;
+  duration_hours: number | null;
+  instructor_name: string | null;
+  level: string | null;
+  students_count: number | null;
+}
+
+interface Lesson {
+  id: string;
+  title: string;
+  description: string | null;
+  video_url: string | null;
+  duration_minutes: number | null;
+  order_index: number;
+  is_free: boolean | null;
+  course_id: string;
+}
+
+interface Enrollment {
+  id: string;
+  user_id: string;
+  course_id: string;
+  progress_percent: number | null;
+  enrolled_at: string;
+}
 
 export default function CourseDetail() {
   const { id } = useParams<{ id: string }>();
@@ -31,17 +63,25 @@ export default function CourseDetail() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentLessonId, setCurrentLessonId] = useState<string | null>(null);
-  const [enrollment, setEnrollment] = useState<any>(null);
-  const [progressData, setProgressData] = useState<any[]>([]);
+  const [enrollment, setEnrollment] = useState<Enrollment | null>(null);
 
   useEffect(() => {
     if (!id) return;
+    fetchCourseData();
+  }, [id, user]);
 
+  const fetchCourseData = async () => {
     try {
       setLoading(true);
       
       // دریافت دوره
-      const courseData = coursesService.getCourse(id);
+      const { data: courseData, error: courseError } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (courseError) throw courseError;
       if (!courseData) {
         setLoading(false);
         return;
@@ -49,26 +89,38 @@ export default function CourseDetail() {
       setCourse(courseData);
 
       // دریافت دروس
-      const lessonsData = lessonsService.getLessonsByCourse(id);
-      setLessons(lessonsData);
-      if (lessonsData.length > 0) {
+      const { data: lessonsData, error: lessonsError } = await supabase
+        .from('course_lessons')
+        .select('*')
+        .eq('course_id', id)
+        .order('order_index', { ascending: true });
+
+      if (lessonsError) throw lessonsError;
+      setLessons(lessonsData || []);
+      
+      if (lessonsData && lessonsData.length > 0) {
         setCurrentLessonId(lessonsData[0].id);
       }
 
       // بررسی ثبت‌نام
       if (user?.id) {
-        const enrollmentData = enrollmentsService.getEnrollmentsByStudent(user.id)
-          .find(e => e.course_id === id);
-        setEnrollment(enrollmentData || null);
+        const { data: enrollmentData } = await supabase
+          .from('course_enrollments')
+          .select('*')
+          .eq('course_id', id)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        setEnrollment(enrollmentData);
       }
     } catch (error) {
       console.error('خطا در دریافت اطلاعات دوره:', error);
     } finally {
       setLoading(false);
     }
-  }, [id, user]);
+  };
 
-  const handleEnroll = () => {
+  const handleEnroll = async () => {
     if (!user?.id || !id) {
       toast({
         title: "خطا",
@@ -79,35 +131,45 @@ export default function CourseDetail() {
     }
 
     try {
-      const newEnrollment = enrollmentsService.enroll({
-        course_id: id,
-        student_email: user.email || "",
-        student_name: user.user_metadata?.name || "دانشجو",
-        phone: null,
-      });
-      setEnrollment(newEnrollment);
+      const { data, error } = await supabase
+        .from('course_enrollments')
+        .insert({
+          course_id: id,
+          user_id: user.id,
+          progress_percent: 0,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setEnrollment(data);
       toast({
         title: "ثبت‌نام موفق!",
         description: "شما با موفقیت در این دوره ثبت‌نام کردید.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "خطا",
-        description: "مشکلی در ثبت‌نام پیش آمد.",
+        description: error.message || "مشکلی در ثبت‌نام پیش آمد.",
         variant: "destructive",
       });
     }
   };
 
-  const handleLessonProgress = (lessonId: string, completed: boolean) => {
+  const handleLessonProgress = async (lessonId: string, completed: boolean) => {
     if (!enrollment) return;
     
     try {
-      enrollmentsService.updateProgress(enrollment.id, completed ? 100 : 0);
+      const newProgress = completed ? 100 : 0;
+      const { error } = await supabase
+        .from('course_enrollments')
+        .update({ progress_percent: newProgress })
+        .eq('id', enrollment.id);
+
+      if (error) throw error;
       
-      // بروز رسانی progress
-      const updatedEnrollment = { ...enrollment, progress: completed ? 100 : 0 };
-      setEnrollment(updatedEnrollment);
+      setEnrollment({ ...enrollment, progress_percent: newProgress });
       
       toast({
         title: "موفق",
@@ -233,17 +295,17 @@ export default function CourseDetail() {
                   <div className="flex flex-wrap gap-4 text-sm">
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4 text-muted-foreground" />
-                      {course.duration_hours} ساعت
+                      {course.duration_hours || 0} ساعت
                     </span>
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4 text-muted-foreground" />
-                      {course.students_count} دانشجو
+                      {course.students_count || 0} دانشجو
                     </span>
                     <span className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-accent fill-accent" />
-                      {(course.students_count > 0 ? 4.5 : 0).toFixed(1)}
+                      4.5
                     </span>
-                    <Badge variant="secondary">{course.level}</Badge>
+                    <Badge variant="secondary">{course.level || 'مبتدی'}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -299,7 +361,7 @@ export default function CourseDetail() {
                         </div>
                         <span className="text-sm text-muted-foreground flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {lesson.duration_minutes} دقیقه
+                          {lesson.duration_minutes || 0} دقیقه
                         </span>
                       </button>
                     ))}
@@ -343,10 +405,10 @@ export default function CourseDetail() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium">پیشرفت شما</span>
                           <span className="text-sm text-muted-foreground">
-                            {enrollment.progress}%
+                            {enrollment.progress_percent || 0}%
                           </span>
                         </div>
-                        <Progress value={enrollment.progress} className="h-2" />
+                        <Progress value={enrollment.progress_percent || 0} className="h-2" />
                       </div>
                     )}
 
@@ -374,7 +436,7 @@ export default function CourseDetail() {
                     <div className="mt-6 space-y-3 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">مدرس</span>
-                        <span className="font-medium">{course.instructor_name}</span>
+                        <span className="font-medium">{course.instructor_name || '-'}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">تعداد دروس</span>
@@ -382,11 +444,11 @@ export default function CourseDetail() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">مدت دوره</span>
-                        <span className="font-medium">{course.duration_hours} ساعت</span>
+                        <span className="font-medium">{course.duration_hours || 0} ساعت</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-muted-foreground">سطح</span>
-                        <span className="font-medium">{course.level}</span>
+                        <span className="font-medium">{course.level || 'مبتدی'}</span>
                       </div>
                     </div>
                   </CardContent>
