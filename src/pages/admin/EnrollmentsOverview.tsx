@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Search, Loader2, BookOpen, TrendingUp, CheckCircle, AlertCircle, Mail, Phone } from "lucide-react";
+import { Users, Search, Loader2, TrendingUp, CheckCircle, AlertCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { coursesService, enrollmentsService, Enrollment } from "@/services/coursesService";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -15,8 +15,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface EnrollmentWithCourse extends Enrollment {
+interface EnrollmentWithCourse {
+  id: string;
+  course_id: string;
+  user_id: string;
+  enrolled_at: string;
+  progress_percent: number;
+  completed_at: string | null;
   course_title: string;
+  profile?: {
+    full_name: string | null;
+    phone: string | null;
+  };
 }
 
 export default function EnrollmentsOverview() {
@@ -30,23 +40,27 @@ export default function EnrollmentsOverview() {
     fetchEnrollments();
   }, []);
 
-  const fetchEnrollments = () => {
+  const fetchEnrollments = async () => {
     try {
       setLoading(true);
-      const courses = coursesService.getAllCourses();
-      const allEnrollments: EnrollmentWithCourse[] = [];
-
-      courses.forEach(course => {
-        const courseEnrollments = enrollmentsService.getEnrollmentsByCourse(course.id);
-        courseEnrollments.forEach(enrollment => {
-          allEnrollments.push({
-            ...enrollment,
-            course_title: course.title,
-          });
-        });
-      });
-
-      setEnrollments(allEnrollments);
+      const { data, error } = await supabase
+        .from('course_enrollments')
+        .select(`
+          *,
+          course:courses(title),
+          profile:profiles(full_name, phone)
+        `)
+        .order('enrolled_at', { ascending: false });
+      
+      if (error) throw error;
+      
+      const enrollmentData = (data || []).map(e => ({
+        ...e,
+        course_title: Array.isArray(e.course) ? e.course[0]?.title : e.course?.title || 'نامشخص',
+        profile: Array.isArray(e.profile) ? e.profile[0] : e.profile,
+      }));
+      
+      setEnrollments(enrollmentData);
     } catch (error) {
       console.error('خطا در دریافت ثبت‌نام‌ها:', error);
       toast({ variant: "destructive", title: "خطا", description: "خطا در بارگذاری داده‌ها" });
@@ -57,14 +71,15 @@ export default function EnrollmentsOverview() {
 
   const filterEnrollments = (enrollments: EnrollmentWithCourse[]) => {
     return enrollments.filter((e) => {
-      const matchesSearch = e.student_name.toLowerCase().includes(search.toLowerCase()) || 
-                           e.student_email.toLowerCase().includes(search.toLowerCase()) ||
+      const studentName = e.profile?.full_name || '';
+      const matchesSearch = studentName.toLowerCase().includes(search.toLowerCase()) || 
                            e.course_title.toLowerCase().includes(search.toLowerCase());
       
+      const isCompleted = e.completed_at !== null;
       const matchesStatus = filterStatus === 'all' ||
-                           (filterStatus === 'completed' ? e.is_completed : 
-                            filterStatus === 'in-progress' ? !e.is_completed && e.progress > 0 :
-                            e.progress === 0);
+                           (filterStatus === 'completed' ? isCompleted : 
+                            filterStatus === 'in-progress' ? !isCompleted && e.progress_percent > 0 :
+                            e.progress_percent === 0);
       
       return matchesSearch && matchesStatus;
     });
@@ -75,11 +90,11 @@ export default function EnrollmentsOverview() {
   // Calculate stats
   const stats = {
     total: enrollments.length,
-    completed: enrollments.filter(e => e.is_completed).length,
-    in_progress: enrollments.filter(e => !e.is_completed && e.progress > 0).length,
-    not_started: enrollments.filter(e => e.progress === 0).length,
+    completed: enrollments.filter(e => e.completed_at !== null).length,
+    in_progress: enrollments.filter(e => !e.completed_at && e.progress_percent > 0).length,
+    not_started: enrollments.filter(e => e.progress_percent === 0).length,
     average_progress: enrollments.length > 0 
-      ? Math.round(enrollments.reduce((sum, e) => sum + e.progress, 0) / enrollments.length)
+      ? Math.round(enrollments.reduce((sum, e) => sum + (e.progress_percent || 0), 0) / enrollments.length)
       : 0,
   };
 
@@ -111,7 +126,7 @@ export default function EnrollmentsOverview() {
           <p className="text-3xl font-bold text-orange-600">{stats.in_progress}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-900/10 rounded-xl p-4 border border-purple-200 dark:border-purple-800">
-          <p className="text-sm text-muted-foreground mb-1">بی احراز</p>
+          <p className="text-sm text-muted-foreground mb-1">شروع نکرده</p>
           <p className="text-3xl font-bold text-purple-600">{stats.not_started}</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-900/10 rounded-xl p-4 border border-pink-200 dark:border-pink-800">
@@ -130,7 +145,7 @@ export default function EnrollmentsOverview() {
           <div className="relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input 
-              placeholder="جستجو (نام، ایمیل، دوره)..." 
+              placeholder="جستجو (نام، دوره)..." 
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
               className="pr-10" 
@@ -144,7 +159,7 @@ export default function EnrollmentsOverview() {
               <SelectItem value="all">همه</SelectItem>
               <SelectItem value="completed">تمام‌شده</SelectItem>
               <SelectItem value="in-progress">در حال انجام</SelectItem>
-              <SelectItem value="not-started">بی احراز</SelectItem>
+              <SelectItem value="not-started">شروع نکرده</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -166,7 +181,6 @@ export default function EnrollmentsOverview() {
             <thead className="border-b border-border bg-muted/50">
               <tr>
                 <th className="text-right p-4 font-semibold">نام دانشجو</th>
-                <th className="text-right p-4 font-semibold">ایمیل</th>
                 <th className="text-right p-4 font-semibold">تلفن</th>
                 <th className="text-right p-4 font-semibold">دوره</th>
                 <th className="text-center p-4 font-semibold">پیشرفت</th>
@@ -177,23 +191,17 @@ export default function EnrollmentsOverview() {
             </thead>
             <tbody>
               {filteredEnrollments.map((enrollment) => {
-                const course = coursesService.getCourse(enrollment.course_id);
+                const isCompleted = enrollment.completed_at !== null;
                 return (
                   <tr key={enrollment.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                     <td className="p-4">
-                      <span className="font-medium">{enrollment.student_name}</span>
+                      <span className="font-medium">{enrollment.profile?.full_name || 'کاربر'}</span>
                     </td>
                     <td className="p-4 text-muted-foreground">
-                      <a href={`mailto:${enrollment.student_email}`} className="hover:text-primary transition flex items-center gap-2">
-                        <Mail className="w-4 h-4" />
-                        {enrollment.student_email}
-                      </a>
-                    </td>
-                    <td className="p-4 text-muted-foreground">
-                      {enrollment.phone ? (
-                        <a href={`tel:${enrollment.phone}`} className="hover:text-primary transition flex items-center gap-2">
+                      {enrollment.profile?.phone ? (
+                        <a href={`tel:${enrollment.profile.phone}`} className="hover:text-primary transition flex items-center gap-2">
                           <Phone className="w-4 h-4" />
-                          {enrollment.phone}
+                          {enrollment.profile.phone}
                         </a>
                       ) : (
                         '-'
@@ -205,18 +213,18 @@ export default function EnrollmentsOverview() {
                       </Link>
                     </td>
                     <td className="p-4 text-center">
-                      <span className="font-medium">{enrollment.progress}%</span>
+                      <span className="font-medium">{enrollment.progress_percent}%</span>
                     </td>
                     <td className="p-4 text-center">
-                      {enrollment.is_completed ? (
+                      {isCompleted ? (
                         <Badge className="bg-green-600 text-white gap-1">
                           <CheckCircle className="w-3 h-3" />
                           تمام
                         </Badge>
-                      ) : enrollment.progress > 0 ? (
+                      ) : enrollment.progress_percent > 0 ? (
                         <Badge className="bg-orange-600 text-white gap-1">
                           <TrendingUp className="w-3 h-3" />
-                          {enrollment.progress}%
+                          {enrollment.progress_percent}%
                         </Badge>
                       ) : (
                         <Badge className="bg-gray-600 text-white gap-1">
