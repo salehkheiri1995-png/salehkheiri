@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Save, Loader2, Building2, Phone, Instagram, FileText, Home, Truck, Palette } from "lucide-react";
+import { Save, Loader2, Building2, Phone, Instagram, FileText, Home, Truck, Palette, ToggleLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,12 @@ interface SalonSettings {
   home_booking_subtitle: string | null;
   shipping_cost: number | null;
   free_shipping_threshold: number | null;
+  section_services_enabled: boolean;
+  section_portfolio_enabled: boolean;
+  section_specialists_enabled: boolean;
+  section_courses_enabled: boolean;
+  section_shop_enabled: boolean;
+  section_booking_enabled: boolean;
 }
 
 export default function AdminSettings() {
@@ -97,6 +103,12 @@ export default function AdminSettings() {
           home_booking_subtitle: formData.home_booking_subtitle,
           shipping_cost: formData.shipping_cost,
           free_shipping_threshold: formData.free_shipping_threshold,
+          section_services_enabled: formData.section_services_enabled ?? true,
+          section_portfolio_enabled: formData.section_portfolio_enabled ?? true,
+          section_specialists_enabled: formData.section_specialists_enabled ?? true,
+          section_courses_enabled: formData.section_courses_enabled ?? true,
+          section_shop_enabled: formData.section_shop_enabled ?? true,
+          section_booking_enabled: formData.section_booking_enabled ?? true,
         });
         if (error) throw error;
       } else {
@@ -129,6 +141,12 @@ export default function AdminSettings() {
             home_booking_subtitle: formData.home_booking_subtitle,
             shipping_cost: formData.shipping_cost,
             free_shipping_threshold: formData.free_shipping_threshold,
+            section_services_enabled: formData.section_services_enabled,
+            section_portfolio_enabled: formData.section_portfolio_enabled,
+            section_specialists_enabled: formData.section_specialists_enabled,
+            section_courses_enabled: formData.section_courses_enabled,
+            section_shop_enabled: formData.section_shop_enabled,
+            section_booking_enabled: formData.section_booking_enabled,
           })
           .eq("id", settings.id);
         if (error) throw error;
@@ -176,10 +194,14 @@ export default function AdminSettings() {
 
       <form onSubmit={handleSubmit}>
         <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="general" className="gap-2">
               <Building2 className="w-4 h-4" />
               اطلاعات سالن
+            </TabsTrigger>
+            <TabsTrigger value="sections" className="gap-2">
+              <ToggleLeft className="w-4 h-4" />
+              بخش‌ها
             </TabsTrigger>
             <TabsTrigger value="contact" className="gap-2">
               <Phone className="w-4 h-4" />
@@ -266,6 +288,122 @@ export default function AdminSettings() {
                 </Card>
               </motion.div>
             </div>
+          </TabsContent>
+
+          {/* Sections Tab */}
+          <TabsContent value="sections">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ToggleLeft className="w-5 h-5" />
+                    مدیریت بخش‌های سایت
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    هر بخشی که غیرفعال کنید از منوی سایت و پنل مدیریت حذف می‌شود
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                      <div>
+                        <p className="font-medium">خدمات</p>
+                        <p className="text-sm text-muted-foreground">صفحه خدمات</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.section_services_enabled ?? true}
+                          onChange={(e) => setFormData({ ...formData, section_services_enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                      <div>
+                        <p className="font-medium">نمونه‌کارها</p>
+                        <p className="text-sm text-muted-foreground">گالری نمونه‌کارها</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.section_portfolio_enabled ?? true}
+                          onChange={(e) => setFormData({ ...formData, section_portfolio_enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                      <div>
+                        <p className="font-medium">متخصصان</p>
+                        <p className="text-sm text-muted-foreground">تیم متخصصان</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.section_specialists_enabled ?? true}
+                          onChange={(e) => setFormData({ ...formData, section_specialists_enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                      <div>
+                        <p className="font-medium">دوره‌های آموزشی</p>
+                        <p className="text-sm text-muted-foreground">دوره‌ها و ثبت‌نام</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.section_courses_enabled ?? true}
+                          onChange={(e) => setFormData({ ...formData, section_courses_enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                      <div>
+                        <p className="font-medium">فروشگاه</p>
+                        <p className="text-sm text-muted-foreground">محصولات و سفارشات</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.section_shop_enabled ?? true}
+                          onChange={(e) => setFormData({ ...formData, section_shop_enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+                      <div>
+                        <p className="font-medium">رزرو نوبت</p>
+                        <p className="text-sm text-muted-foreground">سیستم رزرو آنلاین</p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.section_booking_enabled ?? true}
+                          onChange={(e) => setFormData({ ...formData, section_booking_enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                      </label>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
           </TabsContent>
 
           {/* Contact Tab */}

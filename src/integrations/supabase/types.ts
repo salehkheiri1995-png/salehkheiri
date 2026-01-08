@@ -705,6 +705,12 @@ export type Database = {
           logo_url: string | null
           phone: string | null
           salon_name: string
+          section_booking_enabled: boolean | null
+          section_courses_enabled: boolean | null
+          section_portfolio_enabled: boolean | null
+          section_services_enabled: boolean | null
+          section_shop_enabled: boolean | null
+          section_specialists_enabled: boolean | null
           shipping_cost: number | null
           telegram_url: string | null
           updated_at: string
@@ -736,6 +742,12 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           salon_name?: string
+          section_booking_enabled?: boolean | null
+          section_courses_enabled?: boolean | null
+          section_portfolio_enabled?: boolean | null
+          section_services_enabled?: boolean | null
+          section_shop_enabled?: boolean | null
+          section_specialists_enabled?: boolean | null
           shipping_cost?: number | null
           telegram_url?: string | null
           updated_at?: string
@@ -767,6 +779,12 @@ export type Database = {
           logo_url?: string | null
           phone?: string | null
           salon_name?: string
+          section_booking_enabled?: boolean | null
+          section_courses_enabled?: boolean | null
+          section_portfolio_enabled?: boolean | null
+          section_services_enabled?: boolean | null
+          section_shop_enabled?: boolean | null
+          section_specialists_enabled?: boolean | null
           shipping_cost?: number | null
           telegram_url?: string | null
           updated_at?: string

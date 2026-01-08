@@ -29,6 +29,12 @@ export interface SalonSettings {
   home_booking_subtitle: string | null;
   shipping_cost: number | null;
   free_shipping_threshold: number | null;
+  section_services_enabled: boolean | null;
+  section_portfolio_enabled: boolean | null;
+  section_specialists_enabled: boolean | null;
+  section_courses_enabled: boolean | null;
+  section_shop_enabled: boolean | null;
+  section_booking_enabled: boolean | null;
 }
 
 export function useSalonSettings() {

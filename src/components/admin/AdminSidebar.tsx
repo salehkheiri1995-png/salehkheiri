@@ -18,27 +18,35 @@ import {
   Camera,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { cn } from "@/lib/utils";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "داشبورد", href: "/admin" },
-  { icon: UserCircle, label: "کاربران", href: "/admin/users" },
-  { icon: Scissors, label: "خدمات", href: "/admin/services" },
-  { icon: Users, label: "متخصصان", href: "/admin/specialists" },
-  { icon: Package, label: "محصولات", href: "/admin/products" },
-  { icon: GraduationCap, label: "دوره‌ها", href: "/admin/courses" },
-  { icon: BookOpen, label: "ثبت‌نام دوره‌ها", href: "/admin/enrollments" },
-  { icon: Camera, label: "نمونه‌کارها", href: "/admin/portfolio" },
-  { icon: Calendar, label: "رزروها", href: "/admin/bookings" },
-  { icon: ShoppingCart, label: "سفارشات", href: "/admin/orders" },
-  { icon: Truck, label: "روش‌های ارسال", href: "/admin/shipping" },
-  { icon: MessageSquare, label: "نظرات", href: "/admin/reviews" },
-  { icon: Settings, label: "تنظیمات", href: "/admin/settings" },
+const allMenuItems = [
+  { icon: LayoutDashboard, label: "داشبورد", href: "/admin", section: null },
+  { icon: UserCircle, label: "کاربران", href: "/admin/users", section: null },
+  { icon: Scissors, label: "خدمات", href: "/admin/services", section: "services" },
+  { icon: Users, label: "متخصصان", href: "/admin/specialists", section: "specialists" },
+  { icon: Package, label: "محصولات", href: "/admin/products", section: "shop" },
+  { icon: GraduationCap, label: "دوره‌ها", href: "/admin/courses", section: "courses" },
+  { icon: BookOpen, label: "ثبت‌نام دوره‌ها", href: "/admin/enrollments", section: "courses" },
+  { icon: Camera, label: "نمونه‌کارها", href: "/admin/portfolio", section: "portfolio" },
+  { icon: Calendar, label: "رزروها", href: "/admin/bookings", section: "booking" },
+  { icon: ShoppingCart, label: "سفارشات", href: "/admin/orders", section: "shop" },
+  { icon: Truck, label: "روش‌های ارسال", href: "/admin/shipping", section: "shop" },
+  { icon: MessageSquare, label: "نظرات", href: "/admin/reviews", section: null },
+  { icon: Settings, label: "تنظیمات", href: "/admin/settings", section: null },
 ];
 
 export function AdminSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { data: settings } = useSalonSettings();
+
+  const menuItems = allMenuItems.filter(item => {
+    if (!item.section) return true;
+    const key = `section_${item.section}_enabled` as keyof typeof settings;
+    return settings?.[key] !== false;
+  });
 
   return (
     <aside className="w-64 bg-card border-l border-border min-h-screen flex flex-col">
