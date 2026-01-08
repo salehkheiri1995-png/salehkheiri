@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -30,8 +30,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { Plus, Pencil, Trash2, Camera, GripVertical, AlertCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { Plus, Pencil, Trash2, Camera, GripVertical, AlertCircle, Filter } from "lucide-react";
+import { motion, Reorder } from "framer-motion";
 
 interface PortfolioItem {
   id: string;
@@ -168,6 +168,8 @@ export default function AdminPortfolio() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [isSampleData, setIsSampleData] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [orderedItems, setOrderedItems] = useState<PortfolioItem[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -200,6 +202,49 @@ export default function AdminPortfolio() {
       }
     },
   });
+
+  // Update ordered items when portfolio data changes or filter changes
+  useEffect(() => {
+    if (portfolioItems) {
+      const filtered = selectedCategory === "all" 
+        ? portfolioItems 
+        : portfolioItems.filter(item => item.category === selectedCategory);
+      setOrderedItems(filtered);
+    }
+  }, [portfolioItems, selectedCategory]);
+
+  const updateOrderMutation = useMutation({
+    mutationFn: async (items: PortfolioItem[]) => {
+      // Update order_index for all reordered items
+      const updates = items.map((item, index) => ({
+        id: item.id,
+        order_index: index,
+      }));
+
+      for (const update of updates) {
+        const { error } = await supabase
+          .from("portfolio")
+          .update({ order_index: update.order_index })
+          .eq("id", update.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-portfolio"] });
+      toast({ title: "ترتیب نمونه‌کارها با موفقیت ذخیره شد" });
+    },
+    onError: () => {
+      toast({ title: "خطا در ذخیره ترتیب", variant: "destructive" });
+    },
+  });
+
+  const handleReorder = (newOrder: PortfolioItem[]) => {
+    setOrderedItems(newOrder);
+    // Only update if not sample data
+    if (!isSampleData) {
+      updateOrderMutation.mutate(newOrder);
+    }
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -309,6 +354,15 @@ export default function AdminPortfolio() {
     return categories.find((c) => c.id === categoryId)?.label || "-";
   };
 
+  const filteredStats = {
+    total: portfolioItems?.length || 0,
+    active: portfolioItems?.filter((p) => p.is_active).length || 0,
+    byCategory: categories.map(cat => ({
+      ...cat,
+      count: portfolioItems?.filter(p => p.category === cat.id).length || 0,
+    })),
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -329,7 +383,7 @@ export default function AdminPortfolio() {
           <div>
             <h3 className="font-medium text-amber-900">Sample Data در حال نمایش</h3>
             <p className="text-sm text-amber-800 mt-1">
-              Database هنوز لا ایتم ندارد. برای مشاهده نمونه ایتم از Sample Data استفاده میشود. یک آیتم جدید اضافه کنید تا Database شروع شود!
+              Database هنوز آیتم ندارد. برای مشاهده نمونه از Sample Data استفاده می‌شود. یک آیتم جدید اضافه کنید تا Database شروع شود!
             </p>
           </div>
         </div>
@@ -344,7 +398,7 @@ export default function AdminPortfolio() {
                 <Camera className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{portfolioItems?.length || 0}</p>
+                <p className="text-2xl font-bold">{filteredStats.total}</p>
                 <p className="text-xs text-muted-foreground">کل نمونه‌کارها</p>
               </div>
             </div>
@@ -357,20 +411,51 @@ export default function AdminPortfolio() {
                 <Camera className="w-5 h-5 text-green-500" />
               </div>
               <div>
-                <p className="text-2xl font-bold">
-                  {portfolioItems?.filter((p) => p.is_active).length || 0}
-                </p>
+                <p className="text-2xl font-bold">{filteredStats.active}</p>
                 <p className="text-xs text-muted-foreground">فعال</p>
               </div>
             </div>
           </CardContent>
         </Card>
+        {filteredStats.byCategory.slice(0, 2).map((cat) => (
+          <Card key={cat.id}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
+                  <Camera className="w-5 h-5 text-blue-500" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{cat.count}</p>
+                  <p className="text-xs text-muted-foreground">{cat.label}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      {/* Table */}
+      {/* Filter Section */}
       <Card>
         <CardHeader>
-          <CardTitle>لیست نمونه‌کارها</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>لیست نمونه‌کارها</CardTitle>
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="فیلتر دسته‌بندی" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">همه دسته‌ها</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -391,93 +476,114 @@ export default function AdminPortfolio() {
                     در حال بارگذاری...
                   </TableCell>
                 </TableRow>
-              ) : portfolioItems?.length === 0 ? (
+              ) : orderedItems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    نمونه‌کاری یافت نشد
+                    {selectedCategory === "all" 
+                      ? "نمونه‌کاری یافت نشد" 
+                      : `نمونه‌کاری در دسته ${getCategoryLabel(selectedCategory)} یافت نشد`
+                    }
                   </TableCell>
                 </TableRow>
               ) : (
-                portfolioItems?.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Camera className="w-6 h-6 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{item.title}</p>
-                        {item.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {item.description}
-                          </p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getCategoryLabel(item.category)}</TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={item.is_active}
-                        onCheckedChange={(checked) => {
-                          // اگر Sample Data است، نمیتوان تغییر دهی
-                          if (item.id.startsWith("sample-")) {
-                            toast({
-                              title: "نمیتوانید Sample Data را تغییر دهید",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-                          toggleActiveMutation.mutate({ id: item.id, is_active: checked });
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openDialog(item)}
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive"
-                          onClick={() => {
-                            // اگر Sample Data است، نمیتوان حذف دهی
+                <Reorder.Group
+                  as="tbody"
+                  axis="y"
+                  values={orderedItems}
+                  onReorder={handleReorder}
+                  className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
+                >
+                  {orderedItems.map((item) => (
+                    <Reorder.Item
+                      key={item.id}
+                      value={item}
+                      as="tr"
+                      className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
+                      whileDrag={{
+                        scale: 1.02,
+                        boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+                        backgroundColor: "rgba(var(--primary), 0.05)",
+                      }}
+                    >
+                      <TableCell>
+                        <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
+                      </TableCell>
+                      <TableCell>
+                        <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Camera className="w-6 h-6 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{item.title}</p>
+                          {item.description && (
+                            <p className="text-sm text-muted-foreground line-clamp-1">
+                              {item.description}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{getCategoryLabel(item.category)}</TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={item.is_active}
+                          onCheckedChange={(checked) => {
+                            // اگر Sample Data است، نمیتوان تغییر داد
                             if (item.id.startsWith("sample-")) {
                               toast({
-                                title: "نمیتوانید Sample Data را حذف دهید",
+                                title: "نمیتوانید Sample Data را تغییر دهید",
                                 variant: "destructive",
                               });
                               return;
                             }
-                            if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
-                              deleteMutation.mutate(item.id);
-                            }
+                            toggleActiveMutation.mutate({ id: item.id, is_active: checked });
                           }}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openDialog(item)}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => {
+                              // اگر Sample Data است، نمیتوان حذف کرد
+                              if (item.id.startsWith("sample-")) {
+                                toast({
+                                  title: "نمیتوانید Sample Data را حذف دهید",
+                                  variant: "destructive",
+                                });
+                                return;
+                              }
+                              if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
+                                deleteMutation.mutate(item.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </Reorder.Item>
+                  ))}
+                </Reorder.Group>
               )}
             </TableBody>
           </Table>
