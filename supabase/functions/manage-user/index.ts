@@ -62,7 +62,7 @@ serve(async (req) => {
     }
 
     // Parse request body
-    const { action, user_id, full_name, phone, role } = await req.json();
+    const { action, user_id, full_name, phone, role, delete_options } = await req.json();
 
     console.log('Managing user:', user_id, 'Action:', action);
 
@@ -133,13 +133,101 @@ serve(async (req) => {
       );
 
     } else if (action === 'delete') {
-      // Delete user using admin API
+      const options = delete_options || { orders: true, bookings: true, enrollments: true, reviews: true };
+      
+      console.log('Delete options:', options);
+
+      // Delete or nullify related data based on options
+      if (options.orders) {
+        // Delete order items first, then orders
+        const { data: userOrders } = await supabaseAdmin
+          .from('orders')
+          .select('id')
+          .eq('user_id', user_id);
+        
+        if (userOrders && userOrders.length > 0) {
+          const orderIds = userOrders.map(o => o.id);
+          await supabaseAdmin
+            .from('order_items')
+            .delete()
+            .in('order_id', orderIds);
+          
+          await supabaseAdmin
+            .from('orders')
+            .delete()
+            .eq('user_id', user_id);
+        }
+        console.log('Deleted orders for user:', user_id);
+      } else {
+        // Set user_id to null (preserve data)
+        await supabaseAdmin
+          .from('orders')
+          .update({ user_id: null })
+          .eq('user_id', user_id);
+        console.log('Nullified orders user_id for:', user_id);
+      }
+
+      if (options.bookings) {
+        await supabaseAdmin
+          .from('bookings')
+          .delete()
+          .eq('user_id', user_id);
+        console.log('Deleted bookings for user:', user_id);
+      } else {
+        await supabaseAdmin
+          .from('bookings')
+          .update({ user_id: null })
+          .eq('user_id', user_id);
+        console.log('Nullified bookings user_id for:', user_id);
+      }
+
+      if (options.enrollments) {
+        // Delete lesson progress first
+        await supabaseAdmin
+          .from('lesson_progress')
+          .delete()
+          .eq('user_id', user_id);
+        
+        await supabaseAdmin
+          .from('course_enrollments')
+          .delete()
+          .eq('user_id', user_id);
+        console.log('Deleted enrollments for user:', user_id);
+      }
+
+      if (options.reviews) {
+        await supabaseAdmin
+          .from('reviews')
+          .delete()
+          .eq('user_id', user_id);
+        console.log('Deleted reviews for user:', user_id);
+      }
+
+      // Delete notifications
+      await supabaseAdmin
+        .from('notifications')
+        .delete()
+        .eq('user_id', user_id);
+
+      // Delete user roles
+      await supabaseAdmin
+        .from('user_roles')
+        .delete()
+        .eq('user_id', user_id);
+
+      // Delete profile
+      await supabaseAdmin
+        .from('profiles')
+        .delete()
+        .eq('id', user_id);
+
+      // Finally delete the user from auth
       const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user_id);
 
       if (deleteError) {
         console.error('Delete user error:', deleteError);
         return new Response(
-          JSON.stringify({ error: deleteError.message }),
+          JSON.stringify({ error: 'خطا در حذف کاربر: ' + deleteError.message }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
