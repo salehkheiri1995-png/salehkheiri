@@ -527,7 +527,6 @@ export default function AdminPortfolio() {
                       <TableHead className="w-10 text-center px-3 py-3">
                         <Checkbox
                           checked={selectedItems.size > 0 && selectedItems.size === filteredItems.length}
-                          indeterminate={selectedItems.size > 0 && selectedItems.size < filteredItems.length}
                           onCheckedChange={toggleSelectAll}
                         />
                       </TableHead>
@@ -651,7 +650,7 @@ export default function AdminPortfolio() {
                             <Checkbox
                               checked={item.is_active}
                               onCheckedChange={(checked) => {
-                                toggleActiveMutation.mutate({ id: item.id, is_active: checked });
+                                toggleActiveMutation.mutate({ id: item.id, is_active: !!checked });
                               }}
                             />
                           </TableCell>
@@ -910,7 +909,7 @@ export default function AdminPortfolio() {
                 id="is_active"
                 checked={formData.is_active}
                 onCheckedChange={(checked) =>
-                  setFormData({ ...formData, is_active: checked })
+                  setFormData({ ...formData, is_active: !!checked })
                 }
               />
             </div>
@@ -979,7 +978,7 @@ export default function AdminPortfolio() {
                 id="cat_active"
                 checked={categoryFormData.is_active}
                 onCheckedChange={(checked) =>
-                  setCategoryFormData({ ...categoryFormData, is_active: checked })
+                  setCategoryFormData({ ...categoryFormData, is_active: !!checked })
                 }
               />
             </div>

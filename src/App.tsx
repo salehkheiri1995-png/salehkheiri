@@ -7,6 +7,8 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CartProvider } from "@/hooks/useCart";
 import { useApplyTheme } from "@/hooks/useThemeSettings";
+import { VisualEditorProvider } from "@/hooks/useVisualEditor";
+import { EditorToolbar } from "@/components/visual-editor/EditorToolbar";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -59,59 +61,62 @@ const App = () => (
     <AuthProvider>
       <CartProvider>
         <ThemeApplier>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ScrollToTop />
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/services" element={<Services />} />
-                <Route path="/courses" element={<Courses />} />
-                <Route path="/courses/:id" element={<CourseDetail />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/shop/:id" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/specialists" element={<Specialists />} />
-                <Route path="/specialists/:id" element={<SpecialistDetail />} />
-                <Route path="/booking" element={<Booking />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/faq" element={<FAQ />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy" element={<Privacy />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/portfolio" element={<Portfolio />} />
+          <VisualEditorProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <ScrollToTop />
+                <EditorToolbar />
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/services" element={<Services />} />
+                  <Route path="/courses" element={<Courses />} />
+                  <Route path="/courses/:id" element={<CourseDetail />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/shop/:id" element={<ProductDetail />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/checkout" element={<Checkout />} />
+                  <Route path="/specialists" element={<Specialists />} />
+                  <Route path="/specialists/:id" element={<SpecialistDetail />} />
+                  <Route path="/booking" element={<Booking />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/portfolio" element={<Portfolio />} />
 
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="services" element={<AdminServices />} />
-                  <Route path="specialists" element={<AdminSpecialists />} />
-                  <Route path="products" element={<AdminProducts />} />
-                  <Route path="courses" element={<AdminCourses />} />
-                  <Route path="courses/new" element={<CourseForm />} />
-                  <Route path="courses/:courseId/edit" element={<CourseForm />} />
-                  <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
-                  <Route path="courses/:courseId/enrollments" element={<AdminEnrollments />} />
-                  <Route path="enrollments" element={<EnrollmentsOverview />} />
-                  
-                  <Route path="bookings" element={<AdminBookings />} />
-                  <Route path="orders" element={<AdminOrders />} />
-                  <Route path="shipping" element={<AdminShippingMethods />} />
-                  <Route path="reviews" element={<AdminReviews />} />
-                  <Route path="users" element={<AdminUsers />} />
-                  <Route path="users/:userId" element={<UserDetail />} />
-                  <Route path="portfolio" element={<AdminPortfolio />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                </Route>
+                  {/* Admin Routes */}
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminDashboard />} />
+                    <Route path="services" element={<AdminServices />} />
+                    <Route path="specialists" element={<AdminSpecialists />} />
+                    <Route path="products" element={<AdminProducts />} />
+                    <Route path="courses" element={<AdminCourses />} />
+                    <Route path="courses/new" element={<CourseForm />} />
+                    <Route path="courses/:courseId/edit" element={<CourseForm />} />
+                    <Route path="courses/:courseId/lessons" element={<AdminLessons />} />
+                    <Route path="courses/:courseId/enrollments" element={<AdminEnrollments />} />
+                    <Route path="enrollments" element={<EnrollmentsOverview />} />
+                    
+                    <Route path="bookings" element={<AdminBookings />} />
+                    <Route path="orders" element={<AdminOrders />} />
+                    <Route path="shipping" element={<AdminShippingMethods />} />
+                    <Route path="reviews" element={<AdminReviews />} />
+                    <Route path="users" element={<AdminUsers />} />
+                    <Route path="users/:userId" element={<UserDetail />} />
+                    <Route path="portfolio" element={<AdminPortfolio />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                  </Route>
 
-                {/* Catch-all for 404 */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+                  {/* Catch-all for 404 */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </VisualEditorProvider>
         </ThemeApplier>
       </CartProvider>
     </AuthProvider>

@@ -3,6 +3,8 @@ import { Calendar, Play, Star, Users, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useSalonSettings } from "@/hooks/useSalonSettings";
+import { EditableText } from "@/components/visual-editor/EditableText";
+import { EditableImage } from "@/components/visual-editor/EditableImage";
 
 const stats = [
   { icon: Users, value: "+۵۰۰۰", label: "مشتری راضی" },
@@ -37,18 +39,39 @@ export function HeroSection() {
               className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-6"
             >
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-              {settings?.hero_badge_text || "پذیرش آنلاین فعال است"}
+              <EditableText
+                pageKey="home"
+                contentKey="hero_badge"
+                defaultValue={settings?.hero_badge_text || "پذیرش آنلاین فعال است"}
+                as="span"
+              />
             </motion.div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-6">
-              {settings?.hero_title || "زیبایی شما،"}
+              <EditableText
+                pageKey="home"
+                contentKey="hero_title"
+                defaultValue={settings?.hero_title || "زیبایی شما،"}
+                as="span"
+              />
               <br />
-              <span className="gradient-text">{settings?.hero_highlight || "اولویت ماست"}</span>
+              <EditableText
+                pageKey="home"
+                contentKey="hero_highlight"
+                defaultValue={settings?.hero_highlight || "اولویت ماست"}
+                as="span"
+                className="gradient-text"
+              />
             </h1>
 
-            <p className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed">
-              {settings?.hero_description || "با بهترین متخصصان زیبایی، خدمات حرفه‌ای را تجربه کنید. از مراقبت پوست تا آرایش عروس، همه در یک مکان."}
-            </p>
+            <EditableText
+              pageKey="home"
+              contentKey="hero_description"
+              defaultValue={settings?.hero_description || "با بهترین متخصصان زیبایی، خدمات حرفه‌ای را تجربه کنید. از مراقبت پوست تا آرایش عروس، همه در یک مکان."}
+              as="p"
+              multiline
+              className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed"
+            />
 
             <div className="flex flex-wrap gap-4 mb-12">
               <Button asChild size="lg" className="gap-2 text-base h-14 px-8">
@@ -75,9 +98,21 @@ export function HeroSection() {
                 >
                   <div className="flex items-center justify-center gap-2 mb-1">
                     <stat.icon className="w-5 h-5 text-primary" />
-                    <span className="text-2xl font-bold">{stat.value}</span>
+                    <EditableText
+                      pageKey="home"
+                      contentKey={`stat_${index}_value`}
+                      defaultValue={stat.value}
+                      as="span"
+                      className="text-2xl font-bold"
+                    />
                   </div>
-                  <span className="text-sm text-muted-foreground">{stat.label}</span>
+                  <EditableText
+                    pageKey="home"
+                    contentKey={`stat_${index}_label`}
+                    defaultValue={stat.label}
+                    as="span"
+                    className="text-sm text-muted-foreground"
+                  />
                 </motion.div>
               ))}
             </div>
@@ -91,12 +126,14 @@ export function HeroSection() {
             className="relative"
           >
             <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-elevated">
-              <img
-                src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&h=1000&fit=crop"
+              <EditableImage
+                pageKey="home"
+                contentKey="hero_image"
+                defaultSrc="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800&h=1000&fit=crop"
                 alt="سالن زیبایی"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/50 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/50 to-transparent pointer-events-none" />
             </div>
 
             {/* Floating Cards */}

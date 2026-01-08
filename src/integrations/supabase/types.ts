@@ -714,6 +714,7 @@ export type Database = {
           shipping_cost: number | null
           telegram_url: string | null
           updated_at: string
+          visual_edit_enabled: boolean | null
           whatsapp: string | null
           working_hours: string | null
         }
@@ -751,6 +752,7 @@ export type Database = {
           shipping_cost?: number | null
           telegram_url?: string | null
           updated_at?: string
+          visual_edit_enabled?: boolean | null
           whatsapp?: string | null
           working_hours?: string | null
         }
@@ -788,6 +790,7 @@ export type Database = {
           shipping_cost?: number | null
           telegram_url?: string | null
           updated_at?: string
+          visual_edit_enabled?: boolean | null
           whatsapp?: string | null
           working_hours?: string | null
         }
@@ -861,6 +864,36 @@ export type Database = {
           is_active?: boolean
           name?: string
           price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      site_content: {
+        Row: {
+          content_key: string
+          content_type: string
+          content_value: string | null
+          created_at: string
+          id: string
+          page_key: string
+          updated_at: string
+        }
+        Insert: {
+          content_key: string
+          content_type?: string
+          content_value?: string | null
+          created_at?: string
+          id?: string
+          page_key: string
+          updated_at?: string
+        }
+        Update: {
+          content_key?: string
+          content_type?: string
+          content_value?: string | null
+          created_at?: string
+          id?: string
+          page_key?: string
           updated_at?: string
         }
         Relationships: []
