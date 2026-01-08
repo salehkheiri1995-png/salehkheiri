@@ -306,99 +306,117 @@ export default function AdminSettings() {
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                      <div>
-                        <p className="font-medium">خدمات</p>
-                        <p className="text-sm text-muted-foreground">صفحه خدمات</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
+                          id="section_services"
                           checked={formData.section_services_enabled ?? true}
                           onChange={(e) => setFormData({ ...formData, section_services_enabled: e.target.checked })}
-                          className="sr-only peer"
+                          className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
                         />
-                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
+                        <label htmlFor="section_services" className="cursor-pointer">
+                          <p className="font-medium">خدمات</p>
+                          <p className="text-sm text-muted-foreground">صفحه خدمات</p>
+                        </label>
+                      </div>
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${(formData.section_services_enabled ?? true) ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        {(formData.section_services_enabled ?? true) ? 'فعال' : 'غیرفعال'}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                      <div>
-                        <p className="font-medium">نمونه‌کارها</p>
-                        <p className="text-sm text-muted-foreground">گالری نمونه‌کارها</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
+                          id="section_portfolio"
                           checked={formData.section_portfolio_enabled ?? true}
                           onChange={(e) => setFormData({ ...formData, section_portfolio_enabled: e.target.checked })}
-                          className="sr-only peer"
+                          className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
                         />
-                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
+                        <label htmlFor="section_portfolio" className="cursor-pointer">
+                          <p className="font-medium">نمونه‌کارها</p>
+                          <p className="text-sm text-muted-foreground">گالری نمونه‌کارها</p>
+                        </label>
+                      </div>
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${(formData.section_portfolio_enabled ?? true) ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        {(formData.section_portfolio_enabled ?? true) ? 'فعال' : 'غیرفعال'}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                      <div>
-                        <p className="font-medium">متخصصان</p>
-                        <p className="text-sm text-muted-foreground">تیم متخصصان</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
+                          id="section_specialists"
                           checked={formData.section_specialists_enabled ?? true}
                           onChange={(e) => setFormData({ ...formData, section_specialists_enabled: e.target.checked })}
-                          className="sr-only peer"
+                          className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
                         />
-                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
+                        <label htmlFor="section_specialists" className="cursor-pointer">
+                          <p className="font-medium">متخصصان</p>
+                          <p className="text-sm text-muted-foreground">تیم متخصصان</p>
+                        </label>
+                      </div>
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${(formData.section_specialists_enabled ?? true) ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        {(formData.section_specialists_enabled ?? true) ? 'فعال' : 'غیرفعال'}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                      <div>
-                        <p className="font-medium">دوره‌های آموزشی</p>
-                        <p className="text-sm text-muted-foreground">دوره‌ها و ثبت‌نام</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
+                          id="section_courses"
                           checked={formData.section_courses_enabled ?? true}
                           onChange={(e) => setFormData({ ...formData, section_courses_enabled: e.target.checked })}
-                          className="sr-only peer"
+                          className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
                         />
-                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
+                        <label htmlFor="section_courses" className="cursor-pointer">
+                          <p className="font-medium">دوره‌های آموزشی</p>
+                          <p className="text-sm text-muted-foreground">دوره‌ها و ثبت‌نام</p>
+                        </label>
+                      </div>
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${(formData.section_courses_enabled ?? true) ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        {(formData.section_courses_enabled ?? true) ? 'فعال' : 'غیرفعال'}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                      <div>
-                        <p className="font-medium">فروشگاه</p>
-                        <p className="text-sm text-muted-foreground">محصولات و سفارشات</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
+                          id="section_shop"
                           checked={formData.section_shop_enabled ?? true}
                           onChange={(e) => setFormData({ ...formData, section_shop_enabled: e.target.checked })}
-                          className="sr-only peer"
+                          className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
                         />
-                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
+                        <label htmlFor="section_shop" className="cursor-pointer">
+                          <p className="font-medium">فروشگاه</p>
+                          <p className="text-sm text-muted-foreground">محصولات و سفارشات</p>
+                        </label>
+                      </div>
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${(formData.section_shop_enabled ?? true) ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        {(formData.section_shop_enabled ?? true) ? 'فعال' : 'غیرفعال'}
+                      </span>
                     </div>
 
                     <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
-                      <div>
-                        <p className="font-medium">رزرو نوبت</p>
-                        <p className="text-sm text-muted-foreground">سیستم رزرو آنلاین</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <div className="flex items-center gap-3">
                         <input
                           type="checkbox"
+                          id="section_booking"
                           checked={formData.section_booking_enabled ?? true}
                           onChange={(e) => setFormData({ ...formData, section_booking_enabled: e.target.checked })}
-                          className="sr-only peer"
+                          className="w-5 h-5 rounded border-border text-primary focus:ring-primary cursor-pointer"
                         />
-                        <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
+                        <label htmlFor="section_booking" className="cursor-pointer">
+                          <p className="font-medium">رزرو نوبت</p>
+                          <p className="text-sm text-muted-foreground">سیستم رزرو آنلاین</p>
+                        </label>
+                      </div>
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${(formData.section_booking_enabled ?? true) ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        {(formData.section_booking_enabled ?? true) ? 'فعال' : 'غیرفعال'}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
