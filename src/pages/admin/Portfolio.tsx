@@ -524,7 +524,7 @@ export default function AdminPortfolio() {
                 <Table className="w-full">
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-12 text-center px-3 py-3">
+                      <TableHead className="w-10 text-center px-3 py-3">
                         <Checkbox
                           checked={selectedItems.size > 0 && selectedItems.size === filteredItems.length}
                           indeterminate={selectedItems.size > 0 && selectedItems.size < filteredItems.length}
@@ -532,12 +532,12 @@ export default function AdminPortfolio() {
                         />
                       </TableHead>
                       <TableHead className="w-12 text-center px-3 py-3 border-r">ترتیب</TableHead>
-                      <TableHead className="w-20 text-center px-3 py-3 border-r">رسانه</TableHead>
-                      <TableHead className="min-w-48 text-right px-3 py-3 border-r">عنوان</TableHead>
-                      <TableHead className="w-32 text-right px-3 py-3 border-r">دسته‌بندی</TableHead>
-                      <TableHead className="w-24 text-center px-3 py-3 border-r">آمار</TableHead>
-                      <TableHead className="w-16 text-center px-3 py-3 border-r">وضعیت</TableHead>
-                      <TableHead className="w-24 text-center px-3 py-3 border-r">عملیات</TableHead>
+                      <TableHead className="w-24 text-center px-3 py-3 border-r">رسانه</TableHead>
+                      <TableHead className="min-w-56 text-right px-4 py-3 border-r">عنوان</TableHead>
+                      <TableHead className="w-40 text-right px-4 py-3 border-r">دسته‌بندی</TableHead>
+                      <TableHead className="w-32 text-center px-4 py-3 border-r">آمار</TableHead>
+                      <TableHead className="w-20 text-center px-4 py-3 border-r">وضعیت</TableHead>
+                      <TableHead className="w-28 text-center px-4 py-3 border-r">عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -565,7 +565,7 @@ export default function AdminPortfolio() {
                           selectedItems.has(item.id) ? "bg-primary/5" : ""
                         }`}>
                           {/* Checkbox */}
-                          <TableCell className="w-12 text-center px-3 py-3 align-middle">
+                          <TableCell className="w-10 text-center px-3 py-3 align-middle">
                             <Checkbox
                               checked={selectedItems.has(item.id)}
                               onCheckedChange={() => toggleSelectItem(item.id)}
@@ -578,8 +578,8 @@ export default function AdminPortfolio() {
                           </TableCell>
 
                           {/* رسانه */}
-                          <TableCell className="w-20 px-3 py-3 align-middle border-r">
-                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                          <TableCell className="w-24 px-3 py-3 align-middle border-r">
+                            <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted">
                               {item.image_url ? (
                                 <div className="relative w-full h-full">
                                   <img
@@ -606,7 +606,7 @@ export default function AdminPortfolio() {
                           </TableCell>
 
                           {/* عنوان و توضیح */}
-                          <TableCell className="min-w-48 px-3 py-3 text-right align-middle border-r">
+                          <TableCell className="min-w-56 px-4 py-3 text-right align-middle border-r">
                             <div className="space-y-1">
                               <p className="font-medium text-sm">{item.title}</p>
                               {item.description && (
@@ -618,7 +618,7 @@ export default function AdminPortfolio() {
                           </TableCell>
 
                           {/* دسته‌بندی */}
-                          <TableCell className="w-32 px-3 py-3 text-right align-middle border-r">
+                          <TableCell className="w-40 px-4 py-3 text-right align-middle border-r">
                             <Badge 
                               variant="outline"
                               className="inline-flex whitespace-nowrap text-xs"
@@ -633,8 +633,8 @@ export default function AdminPortfolio() {
                           </TableCell>
 
                           {/* آمار */}
-                          <TableCell className="w-24 px-3 py-3 align-middle border-r">
-                            <div className="flex flex-col items-center gap-0.5 text-xs">
+                          <TableCell className="w-32 px-4 py-3 align-middle border-r">
+                            <div className="flex flex-col items-center gap-1 text-xs">
                               <span className="flex items-center gap-1">
                                 <Eye className="w-3 h-3 text-muted-foreground" />
                                 <span className="font-medium">{item.views_count || 0}</span>
@@ -647,7 +647,7 @@ export default function AdminPortfolio() {
                           </TableCell>
 
                           {/* وضعیت - اب Checkbox */}
-                          <TableCell className="w-16 text-center px-3 py-3 align-middle border-r">
+                          <TableCell className="w-20 text-center px-4 py-3 align-middle border-r">
                             <Checkbox
                               checked={item.is_active}
                               onCheckedChange={(checked) => {
@@ -657,8 +657,8 @@ export default function AdminPortfolio() {
                           </TableCell>
 
                           {/* عملیات */}
-                          <TableCell className="w-24 px-3 py-3 align-middle border-r">
-                            <div className="flex items-center justify-center gap-1">
+                          <TableCell className="w-28 px-4 py-3 align-middle border-r">
+                            <div className="flex items-center justify-center gap-2">
                               <Button
                                 variant="ghost"
                                 size="sm"
