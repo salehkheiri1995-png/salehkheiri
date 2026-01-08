@@ -502,28 +502,28 @@ export default function AdminPortfolio() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto" dir="rtl">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-muted/50 border-y border-border">
-                      <th className="w-14 text-center px-3 py-3 text-sm font-semibold text-foreground">ترتیب</th>
-                      <th className="w-24 text-right px-3 py-3 border-r border-border text-sm font-semibold text-foreground">رسانه</th>
-                      <th className="text-right px-3 py-3 border-r border-border text-sm font-semibold text-foreground">عنوان</th>
-                      <th className="w-32 text-right px-3 py-3 border-r border-border text-sm font-semibold text-foreground">دسته‌بندی</th>
-                      <th className="w-28 text-center px-3 py-3 border-r border-border text-sm font-semibold text-foreground">آمار</th>
-                      <th className="w-20 text-center px-3 py-3 border-r border-border text-sm font-semibold text-foreground">وضعیت</th>
-                      <th className="w-24 text-center px-3 py-3 border-r border-border text-sm font-semibold text-foreground">عملیات</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table className="w-full">
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="w-14 text-center px-3 py-3">ترتیب</TableHead>
+                      <TableHead className="w-24 text-right px-3 py-3 border-r">رسانه</TableHead>
+                      <TableHead className="text-right px-3 py-3 border-r">عنوان</TableHead>
+                      <TableHead className="w-32 text-right px-3 py-3 border-r">دسته‌بندی</TableHead>
+                      <TableHead className="w-28 text-center px-3 py-3 border-r">آمار</TableHead>
+                      <TableHead className="w-20 text-center px-3 py-3 border-r">وضعیت</TableHead>
+                      <TableHead className="w-24 text-center px-3 py-3 border-r">عملیات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {isLoading ? (
-                      <tr>
-                        <td colSpan={7} className="text-center py-12 border-b border-border">
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-12">
                           در حال بارگذاری...
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : orderedItems.length === 0 ? (
-                      <tr>
-                        <td colSpan={7} className="text-center py-12 text-muted-foreground border-b border-border">
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                           <div className="flex items-center justify-center gap-2">
                             <AlertCircle className="w-4 h-4" />
                             {selectedCategory === "all" 
@@ -531,8 +531,8 @@ export default function AdminPortfolio() {
                               : `نمونه‌کاری در دسته ${getCategoryLabel(selectedCategory)} یافت نشد`
                             }
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       <Reorder.Group
                         as="tbody"
@@ -541,14 +541,12 @@ export default function AdminPortfolio() {
                         onReorder={handleReorder}
                         className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
                       >
-                        {orderedItems.map((item, index) => (
+                        {orderedItems.map((item) => (
                           <Reorder.Item
                             key={item.id}
                             value={item}
                             as="tr"
-                            className={`border-b border-border transition-colors hover:bg-muted/30 ${
-                              index % 2 === 0 ? "bg-background" : "bg-muted/10"
-                            }`}
+                            className="border-b transition-colors hover:bg-muted/30"
                             whileDrag={{
                               scale: 1.01,
                               boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
@@ -556,12 +554,12 @@ export default function AdminPortfolio() {
                             }}
                           >
                             {/* ترتیب */}
-                            <td className="w-14 text-center px-3 py-3 align-middle">
+                            <TableCell className="w-14 text-center px-3 py-3 align-middle">
                               <GripVertical className="w-4 h-4 text-muted-foreground inline cursor-grab active:cursor-grabbing" />
-                            </td>
+                            </TableCell>
 
                             {/* رسانه */}
-                            <td className="w-24 px-3 py-3 align-middle border-r border-border">
+                            <TableCell className="w-24 px-3 py-3 align-middle border-r">
                               <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                 {item.image_url ? (
                                   <div className="relative w-full h-full">
@@ -586,10 +584,10 @@ export default function AdminPortfolio() {
                                   </div>
                                 )}
                               </div>
-                            </td>
+                            </TableCell>
 
                             {/* عنوان و توضیح */}
-                            <td className="px-3 py-3 text-right align-middle border-r border-border">
+                            <TableCell className="px-3 py-3 text-right align-middle border-r">
                               <div className="space-y-1">
                                 <p className="font-medium text-sm">{item.title}</p>
                                 {item.description && (
@@ -598,14 +596,13 @@ export default function AdminPortfolio() {
                                   </p>
                                 )}
                               </div>
-                            </td>
+                            </TableCell>
 
                             {/* دسته‌بندی */}
-                            <td className="w-32 px-3 py-3 text-right align-middle border-r border-border">
+                            <TableCell className="w-32 px-3 py-3 text-right align-middle border-r">
                               <Badge 
                                 variant="outline"
                                 className="inline-flex whitespace-nowrap text-xs"
-                                dir="rtl"
                                 style={{ 
                                   backgroundColor: `${getCategoryColor(item.category)}15`,
                                   borderColor: getCategoryColor(item.category),
@@ -614,10 +611,10 @@ export default function AdminPortfolio() {
                               >
                                 {getCategoryLabel(item.category)}
                               </Badge>
-                            </td>
+                            </TableCell>
 
                             {/* آمار */}
-                            <td className="w-28 px-3 py-3 align-middle border-r border-border">
+                            <TableCell className="w-28 px-3 py-3 align-middle border-r">
                               <div className="flex flex-col items-center gap-1 text-xs">
                                 <span className="flex items-center gap-1">
                                   <Eye className="w-3.5 h-3.5 text-muted-foreground" />
@@ -628,20 +625,20 @@ export default function AdminPortfolio() {
                                   <span className="font-medium">{item.likes_count || 0}</span>
                                 </span>
                               </div>
-                            </td>
+                            </TableCell>
 
                             {/* وضعیت */}
-                            <td className="w-20 text-center px-3 py-3 align-middle border-r border-border">
+                            <TableCell className="w-20 text-center px-3 py-3 align-middle border-r">
                               <Switch
                                 checked={item.is_active}
                                 onCheckedChange={(checked) => {
                                   toggleActiveMutation.mutate({ id: item.id, is_active: checked });
                                 }}
                               />
-                            </td>
+                            </TableCell>
 
                             {/* عملیات */}
-                            <td className="w-24 px-3 py-3 align-middle border-r border-border">
+                            <TableCell className="w-24 px-3 py-3 align-middle border-r">
                               <div className="flex items-center justify-center gap-1">
                                 <Button
                                   variant="ghost"
@@ -664,13 +661,13 @@ export default function AdminPortfolio() {
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
                               </div>
-                            </td>
+                            </TableCell>
                           </Reorder.Item>
                         ))}
                       </Reorder.Group>
                     )}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
@@ -689,39 +686,34 @@ export default function AdminPortfolio() {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse">
-                    <thead>
-                      <tr className="bg-muted/50 border-y border-border">
-                        <th className="px-4 py-3 text-right text-sm font-semibold text-foreground">نام دسته‌بندی</th>
-                        <th className="px-4 py-3 text-right border-r border-border text-sm font-semibold text-foreground">شناسه (Slug)</th>
-                        <th className="px-4 py-3 text-right border-r border-border text-sm font-semibold text-foreground">رنگ</th>
-                        <th className="px-4 py-3 text-center border-r border-border text-sm font-semibold text-foreground">تعداد نمونه‌کار</th>
-                        <th className="px-4 py-3 text-center border-r border-border text-sm font-semibold text-foreground">وضعیت</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {categories.map((category, index) => (
-                        <tr 
-                          key={category.id} 
-                          className={`border-b border-border hover:bg-muted/30 transition-colors ${
-                            index % 2 === 0 ? "bg-background" : "bg-muted/10"
-                          }`}
-                        >
-                          <td className="px-4 py-3 text-right">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="px-4 py-3 text-right">نام دسته‌بندی</TableHead>
+                        <TableHead className="px-4 py-3 text-right border-r">شناسه (Slug)</TableHead>
+                        <TableHead className="px-4 py-3 text-right border-r">رنگ</TableHead>
+                        <TableHead className="px-4 py-3 text-center border-r">تعداد نمونه‌کار</TableHead>
+                        <TableHead className="px-4 py-3 text-center border-r">وضعیت</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {categories.map((category) => (
+                        <TableRow key={category.id} className="hover:bg-muted/50">
+                          <TableCell className="px-4 py-3 text-right">
                             <div className="flex items-center gap-2 justify-end">
-                              <span className="font-medium text-sm">{category.name}</span>
+                              <span className="font-medium">{category.name}</span>
                               <div 
                                 className="w-4 h-4 rounded-full flex-shrink-0" 
                                 style={{ backgroundColor: category.color }}
                               />
                             </div>
-                          </td>
-                          <td className="px-4 py-3 text-right border-r border-border">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right border-r">
                             <code className="text-xs bg-muted px-2 py-1 rounded" dir="ltr">
                               {category.slug}
                             </code>
-                          </td>
-                          <td className="px-4 py-3 text-right border-r border-border">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right border-r">
                             <div className="flex items-center gap-2 justify-end">
                               <code className="text-xs" dir="ltr">{category.color}</code>
                               <div 
@@ -729,21 +721,21 @@ export default function AdminPortfolio() {
                                 style={{ backgroundColor: category.color }}
                               />
                             </div>
-                          </td>
-                          <td className="px-4 py-3 text-center border-r border-border">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-center border-r">
                             <Badge variant="secondary">
                               {portfolioItems?.filter(p => p.category === category.slug).length || 0}
                             </Badge>
-                          </td>
-                          <td className="px-4 py-3 text-center border-r border-border">
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-center border-r">
                             <Badge variant={category.is_active ? "default" : "secondary"}>
                               {category.is_active ? "فعال" : "غیرفعال"}
                             </Badge>
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
