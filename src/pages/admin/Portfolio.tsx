@@ -474,7 +474,7 @@ export default function AdminPortfolio() {
                 <CardTitle>لیست نمونه‌کارها</CardTitle>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                    <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[200px]">
                       <Filter className="w-4 h-4 ml-2" />
                       <SelectValue placeholder="فیلتر دسته‌بندی" />
                     </SelectTrigger>
@@ -500,30 +500,30 @@ export default function AdminPortfolio() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <div className="w-full min-w-max">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="w-8 text-center">ترتیب</TableHead>
-                      <TableHead className="w-20 text-right">رسانه</TableHead>
-                      <TableHead className="min-w-[250px] text-right">عنوان</TableHead>
-                      <TableHead className="min-w-[150px] text-right">دسته‌بندی</TableHead>
-                      <TableHead className="text-center">آمار</TableHead>
-                      <TableHead className="text-center">وضعیت</TableHead>
-                      <TableHead className="text-center">عملیات</TableHead>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="w-12 text-center px-4 py-3">ترتیب</TableHead>
+                      <TableHead className="w-28 text-right px-4 py-3">رسانه</TableHead>
+                      <TableHead className="px-4 py-3 text-right min-w-[280px]">عنوان</TableHead>
+                      <TableHead className="px-4 py-3 text-right min-w-[140px]">دسته‌بندی</TableHead>
+                      <TableHead className="w-24 text-center px-4 py-3">آمار</TableHead>
+                      <TableHead className="w-20 text-center px-4 py-3">وضعیت</TableHead>
+                      <TableHead className="w-20 text-center px-4 py-3">عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8">
+                        <TableCell colSpan={7} className="text-center py-12">
                           در حال بارگذاری...
                         </TableCell>
                       </TableRow>
                     ) : orderedItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                           <div className="flex items-center justify-center gap-2">
                             <AlertCircle className="w-4 h-4" />
                             {selectedCategory === "all" 
@@ -541,28 +541,26 @@ export default function AdminPortfolio() {
                         onReorder={handleReorder}
                         className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
                       >
-                        {orderedItems.map((item, index) => (
+                        {orderedItems.map((item) => (
                           <Reorder.Item
                             key={item.id}
                             value={item}
                             as="tr"
-                            className="border-b transition-colors hover:bg-muted/50"
+                            className="border-b transition-colors hover:bg-muted/30"
                             whileDrag={{
-                              scale: 1.02,
+                              scale: 1.01,
                               boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
                               backgroundColor: "rgba(99, 102, 241, 0.05)",
                             }}
                           >
                             {/* ترتیب */}
-                            <TableCell className="text-center w-8">
-                              <div className="flex items-center justify-center">
-                                <GripVertical className="w-4 h-4 text-muted-foreground cursor-grab active:cursor-grabbing" />
-                              </div>
+                            <TableCell className="text-center w-12 px-4 py-3">
+                              <GripVertical className="w-4 h-4 text-muted-foreground inline cursor-grab active:cursor-grabbing" />
                             </TableCell>
 
                             {/* رسانه */}
-                            <TableCell className="w-20 text-right">
-                              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted ml-auto">
+                            <TableCell className="w-28 px-4 py-3">
+                              <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                 {item.image_url ? (
                                   <div className="relative w-full h-full">
                                     <img
@@ -589,11 +587,11 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* عنوان و توضیح */}
-                            <TableCell className="text-right">
+                            <TableCell className="px-4 py-3 text-right">
                               <div className="space-y-1">
-                                <p className="font-medium line-clamp-1">{item.title}</p>
+                                <p className="font-medium text-sm">{item.title}</p>
                                 {item.description && (
-                                  <p className="text-sm text-muted-foreground line-clamp-1">
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
                                     {item.description}
                                   </p>
                                 )}
@@ -601,10 +599,10 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* دسته‌بندی */}
-                            <TableCell className="text-right">
+                            <TableCell className="px-4 py-3 text-right">
                               <Badge 
                                 variant="outline"
-                                className="whitespace-nowrap inline-flex text-right"
+                                className="inline-flex whitespace-nowrap"
                                 dir="rtl"
                                 style={{ 
                                   backgroundColor: `${getCategoryColor(item.category)}15`,
@@ -617,21 +615,21 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* آمار */}
-                            <TableCell>
-                              <div className="flex items-center justify-center gap-3 text-sm">
+                            <TableCell className="w-24 px-4 py-3">
+                              <div className="flex items-center justify-center gap-4 text-sm">
                                 <span className="flex items-center gap-1 whitespace-nowrap">
-                                  <Eye className="w-3 h-3" />
-                                  <span className="text-xs">{item.views_count || 0}</span>
+                                  <Eye className="w-4 h-4" />
+                                  <span className="text-xs font-medium">{item.views_count || 0}</span>
                                 </span>
                                 <span className="flex items-center gap-1 whitespace-nowrap">
-                                  <Heart className="w-3 h-3" />
-                                  <span className="text-xs">{item.likes_count || 0}</span>
+                                  <Heart className="w-4 h-4" />
+                                  <span className="text-xs font-medium">{item.likes_count || 0}</span>
                                 </span>
                               </div>
                             </TableCell>
 
                             {/* وضعیت */}
-                            <TableCell className="text-center">
+                            <TableCell className="w-20 text-center px-4 py-3">
                               <Switch
                                 checked={item.is_active}
                                 onCheckedChange={(checked) => {
@@ -641,20 +639,20 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* عملیات */}
-                            <TableCell>
-                              <div className="flex items-center justify-center gap-1">
+                            <TableCell className="w-20 px-4 py-3">
+                              <div className="flex items-center justify-center gap-2">
                                 <Button
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => openDialog(item)}
-                                  className="h-8 w-8 p-0"
+                                  className="h-8 w-8 p-0 hover:bg-muted"
                                 >
                                   <Pencil className="w-4 h-4" />
                                 </Button>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
                                   onClick={() => {
                                     if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
                                       deleteMutation.mutate(item.id);
@@ -687,57 +685,59 @@ export default function AdminPortfolio() {
                   این جدول نشان می‌دهد که هر لیبل مربوط به کدام دسته‌بندی است
                 </p>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead className="text-right">نام دسته‌بندی</TableHead>
-                      <TableHead className="text-right">شناسه (Slug)</TableHead>
-                      <TableHead className="text-right">رنگ</TableHead>
-                      <TableHead className="text-center">تعداد نمونه‌کار</TableHead>
-                      <TableHead className="text-center">وضعیت</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell className="text-right">
-                          <div className="flex items-center gap-2 justify-end">
-                            <span className="font-medium">{category.name}</span>
-                            <div 
-                              className="w-4 h-4 rounded-full" 
-                              style={{ backgroundColor: category.color }}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <code className="text-xs bg-muted px-2 py-1 rounded" dir="ltr">
-                            {category.slug}
-                          </code>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center gap-2 justify-end">
-                            <code className="text-xs" dir="ltr">{category.color}</code>
-                            <div 
-                              className="w-6 h-6 rounded border" 
-                              style={{ backgroundColor: category.color }}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant="secondary">
-                            {portfolioItems?.filter(p => p.category === category.slug).length || 0}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={category.is_active ? "default" : "secondary"}>
-                            {category.is_active ? "فعال" : "غیرفعال"}
-                          </Badge>
-                        </TableCell>
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="px-4 py-3 text-right">نام دسته‌بندی</TableHead>
+                        <TableHead className="px-4 py-3 text-right">شناسه (Slug)</TableHead>
+                        <TableHead className="px-4 py-3 text-right">رنگ</TableHead>
+                        <TableHead className="px-4 py-3 text-center">تعداد نمونه‌کار</TableHead>
+                        <TableHead className="px-4 py-3 text-center">وضعیت</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {categories.map((category) => (
+                        <TableRow key={category.id} className="hover:bg-muted/50">
+                          <TableCell className="px-4 py-3 text-right">
+                            <div className="flex items-center gap-2 justify-end">
+                              <span className="font-medium">{category.name}</span>
+                              <div 
+                                className="w-4 h-4 rounded-full flex-shrink-0" 
+                                style={{ backgroundColor: category.color }}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right">
+                            <code className="text-xs bg-muted px-2 py-1 rounded" dir="ltr">
+                              {category.slug}
+                            </code>
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right">
+                            <div className="flex items-center gap-2 justify-end">
+                              <code className="text-xs" dir="ltr">{category.color}</code>
+                              <div 
+                                className="w-6 h-6 rounded border flex-shrink-0" 
+                                style={{ backgroundColor: category.color }}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-center">
+                            <Badge variant="secondary">
+                              {portfolioItems?.filter(p => p.category === category.slug).length || 0}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-center">
+                            <Badge variant={category.is_active ? "default" : "secondary"}>
+                              {category.is_active ? "فعال" : "غیرفعال"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -779,7 +779,7 @@ export default function AdminPortfolio() {
                           <p className="text-sm text-muted-foreground" dir="ltr">{category.slug}</p>
                         </div>
                         <div 
-                          className="w-10 h-10 rounded-full flex items-center justify-center"
+                          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{ backgroundColor: `${category.color}20` }}
                         >
                           <Tag className="w-5 h-5" style={{ color: category.color }} />
