@@ -9,7 +9,24 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { coursesService, enrollmentsService, Course } from "@/services/coursesService";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  price: number;
+  original_price: number | null;
+  duration_hours: number | null;
+  instructor_name: string | null;
+  level: string | null;
+  course_type: string | null;
+  students_count: number | null;
+  is_active: boolean;
+  is_new: boolean | null;
+  created_at: string;
+}
 
 export default function AdminCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -27,18 +44,16 @@ export default function AdminCourses() {
     fetchCourses();
   }, []);
 
-  const fetchCourses = () => {
+  const fetchCourses = async () => {
     try {
       setLoading(true);
-      let data = coursesService.getAllCourses();
-      
-      // به‌روزرسانی تعداد دانشجویان از enrollments
-      data = data.map(course => ({
-        ...course,
-        students_count: enrollmentsService.getEnrollmentsByCourse(course.id).length
-      }));
-      
-      setCourses(data);
+      const { data, error } = await supabase
+        .from('courses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setCourses(data || []);
     } catch (error) {
       console.error('خطا در دریافت دوره‌ها:', error);
       toast({ variant: "destructive", title: "خطا", description: "خطا در بارگذاری دوره‌ها" });
@@ -47,16 +62,18 @@ export default function AdminCourses() {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     try {
-      const success = coursesService.deleteCourse(id);
-      if (success) {
-        toast({ title: "موفق", description: "دوره حذف شد" });
-        fetchCourses();
-        setDeleteConfirmId(null);
-      } else {
-        toast({ variant: "destructive", title: "خطا", description: "دوره پیدا نشد" });
-      }
+      const { error } = await supabase
+        .from('courses')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      toast({ title: "موفق", description: "دوره حذف شد" });
+      fetchCourses();
+      setDeleteConfirmId(null);
     } catch (error: any) {
       toast({ variant: "destructive", title: "خطا", description: error.message });
     }
@@ -112,17 +129,12 @@ export default function AdminCourses() {
             {filteredCourses.length} دوره از {courses.length} نمایش داده می‌شود
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline">
-            <Link to="/admin/sample-data">Seed Data</Link>
-          </Button>
-          <Button asChild>
-            <Link to="/admin/courses/new" className="gap-2">
-              <Plus className="w-4 h-4" />
-              افزودن دوره
-            </Link>
-          </Button>
-        </div>
+        <Button asChild>
+          <Link to="/admin/courses/new" className="gap-2">
+            <Plus className="w-4 h-4" />
+            افزودن دوره
+          </Link>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -209,10 +221,10 @@ export default function AdminCourses() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">جدیدترين</SelectItem>
-              <SelectItem value="price-asc">قیمت بالاتر</SelectItem>
-              <SelectItem value="price-desc">قیمت لوانطر</SelectItem>
-              <SelectItem value="popular">مکمل وابسته‌شده</SelectItem>
+              <SelectItem value="newest">جدیدترین</SelectItem>
+              <SelectItem value="price-asc">قیمت کمتر</SelectItem>
+              <SelectItem value="price-desc">قیمت بیشتر</SelectItem>
+              <SelectItem value="popular">محبوب‌ترین</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -226,7 +238,7 @@ export default function AdminCourses() {
       ) : filteredCourses.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
           <BookOpen className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-          <p className="text-muted-foreground text-lg">دورهای برابری با فیلتر پیدا نشد</p>
+          <p className="text-muted-foreground text-lg">دوره‌ای با این فیلتر پیدا نشد</p>
         </div>
       ) : viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -300,8 +312,8 @@ export default function AdminCourses() {
                   </div>
                 </div>
                 <div className="flex items-center justify-between mb-3 gap-2">
-                  <Badge variant="outline">{course.level}</Badge>
-                  <Badge variant="secondary">{course.course_type}</Badge>
+                  <Badge variant="outline">{course.level || 'مبتدی'}</Badge>
+                  <Badge variant="secondary">{course.course_type || 'ویدیویی'}</Badge>
                 </div>
                 <div className="flex items-baseline justify-between">
                   <div>
@@ -340,50 +352,22 @@ export default function AdminCourses() {
                     </div>
                   </td>
                   <td className="p-4 text-muted-foreground">{course.instructor_name || "-"}</td>
-                  <td className="p-4 text-center"><Badge variant="outline">{course.level}</Badge></td>
-                  <td className="p-4 text-center"><Badge variant="secondary">{course.course_type}</Badge></td>
-                  <td className="p-4 text-center font-bold text-primary">{formatPrice(course.price)}</td>
+                  <td className="p-4 text-center"><Badge variant="outline">{course.level || 'مبتدی'}</Badge></td>
+                  <td className="p-4 text-center"><Badge variant="secondary">{course.course_type || 'ویدیویی'}</Badge></td>
+                  <td className="p-4 text-center font-medium">{formatPrice(course.price)}</td>
                   <td className="p-4 text-center">{course.students_count || 0}</td>
                   <td className="p-4 text-center">
-                    <Badge variant={course.is_active ? "default" : "destructive"}>
-                      {course.is_active ? "✅ فعال" : "❌ غیرفعال"}
-                    </Badge>
+                    <Badge className={course.is_active ? "bg-green-500" : "bg-gray-500"}>{course.is_active ? "فعال" : "غیرفعال"}</Badge>
                   </td>
                   <td className="p-4 text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          ...
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>عملیات</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link to={`/admin/courses/${course.id}/edit`} className="gap-2">
-                            <Pencil className="w-4 h-4" />
-                            ویرایش
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to={`/admin/courses/${course.id}/lessons`} className="gap-2">
-                            <BookOpen className="w-4 h-4" />
-                            دروس
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                          <Link to={`/admin/courses/${course.id}/enrollments`} className="gap-2">
-                            <Users className="w-4 h-4" />
-                            ثبت‌نام‌ها
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setDeleteConfirmId(course.id)} className="text-red-600 gap-2">
-                          <Trash2 className="w-4 h-4" />
-                          حذف
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex items-center justify-center gap-1">
+                      <Button asChild variant="ghost" size="icon">
+                        <Link to={`/admin/courses/${course.id}/edit`}><Pencil className="w-4 h-4" /></Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteConfirmId(course.id)} className="text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -393,12 +377,12 @@ export default function AdminCourses() {
       )}
 
       {/* Delete Confirmation */}
-      <AlertDialog open={deleteConfirmId !== null} onOpenChange={() => setDeleteConfirmId(null)}>
+      <AlertDialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>آيا مطمئن هستید؟</AlertDialogTitle>
+            <AlertDialogTitle>آیا مطمئن هستید؟</AlertDialogTitle>
             <AlertDialogDescription>
-              اين دوره به طور رايگان حذف خواهند شد.
+              این دوره و تمام دروس و ثبت‌نام‌های مرتبط حذف خواهند شد.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

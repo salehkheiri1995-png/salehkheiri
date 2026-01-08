@@ -8,21 +8,22 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { externalDbApi } from "@/services/externalDbApi";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Course {
   id: string;
   title: string;
-  description: string;
-  instructor_name: string;
+  description: string | null;
+  instructor_name: string | null;
   price: number;
-  original_price?: number;
-  duration_hours: number;
-  students_count: number;
-  rating: number;
-  level: string;
-  image_url?: string;
-  is_new: boolean;
+  original_price: number | null;
+  duration_hours: number | null;
+  students_count: number | null;
+  rating: number | null;
+  level: string | null;
+  image_url: string | null;
+  is_new: boolean | null;
+  is_active: boolean;
 }
 
 export default function Courses() {
@@ -35,7 +36,13 @@ export default function Courses() {
     const fetchCourses = async () => {
       try {
         setIsLoading(true);
-        const data = await externalDbApi.courses.getAll();
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
         setCourses(data || []);
       } catch (error) {
         console.error('خطا در دریافت دوره‌ها:', error);
@@ -123,7 +130,7 @@ export default function Courses() {
                       {course.is_new && (
                         <Badge className="bg-accent text-accent-foreground">جدید</Badge>
                       )}
-                      <Badge variant="secondary">{course.level}</Badge>
+                      <Badge variant="secondary">{course.level || 'مبتدی'}</Badge>
                     </div>
                   </div>
 
@@ -138,11 +145,11 @@ export default function Courses() {
                     <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
-                        {course.duration_hours} ساعت
+                        {course.duration_hours || 0} ساعت
                       </span>
                       <span className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
-                        {course.students_count} دانشجو
+                        {course.students_count || 0} دانشجو
                       </span>
                       <span className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-accent fill-accent" />

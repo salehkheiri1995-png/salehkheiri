@@ -17,11 +17,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { coursesService, lessonsService, Lesson } from "@/services/coursesService";
 
 interface Course {
   id: string;
   title: string;
+}
+
+interface Lesson {
+  id: string;
+  title: string;
+  description: string | null;
+  video_url: string | null;
+  duration_minutes: number | null;
+  order_index: number;
+  is_free: boolean | null;
+  course_id: string;
 }
 
 export default function AdminLessons() {
@@ -48,27 +58,21 @@ export default function AdminLessons() {
     }
   }, [courseId]);
 
-  const fetchCourse = () => {
-    try {
-      const data = coursesService.getCourse(courseId!);
-      if (data) {
-        setCourse({ id: data.id, title: data.title });
-      }
-    } catch (error) {
-      console.error('خطا:', error);
-    }
+  const fetchCourse = async () => {
+    const { data } = await supabase.from('courses').select('id, title').eq('id', courseId!).maybeSingle();
+    if (data) setCourse(data);
   };
 
-  const fetchLessons = () => {
-    try {
-      setLoading(true);
-      const data = lessonsService.getLessonsByCourse(courseId!);
-      setLessons(data);
-    } catch (error) {
-      console.error('خطا در دریافت درس‌ها:', error);
-    } finally {
-      setLoading(false);
-    }
+  const fetchLessons = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('course_lessons')
+      .select('*')
+      .eq('course_id', courseId!)
+      .order('order_index', { ascending: true });
+    
+    if (!error) setLessons(data || []);
+    setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -77,24 +81,31 @@ export default function AdminLessons() {
 
     try {
       if (editingLesson) {
-        lessonsService.updateLesson(editingLesson.id, {
-          title: formData.title,
-          description: formData.description || null,
-          video_url: formData.video_url || null,
-          duration_minutes: formData.duration_minutes,
-          is_free: formData.is_free,
-        });
+        const { error } = await supabase
+          .from('course_lessons')
+          .update({
+            title: formData.title,
+            description: formData.description || null,
+            video_url: formData.video_url || null,
+            duration_minutes: formData.duration_minutes,
+            is_free: formData.is_free,
+          })
+          .eq('id', editingLesson.id);
+        if (error) throw error;
         toast({ title: "موفق", description: "درس ویرایش شد" });
       } else {
-        lessonsService.addLesson({
-          course_id: courseId!,
-          title: formData.title,
-          description: formData.description || null,
-          video_url: formData.video_url || null,
-          duration_minutes: formData.duration_minutes,
-          order_index: lessons.length,
-          is_free: formData.is_free,
-        });
+        const { error } = await supabase
+          .from('course_lessons')
+          .insert({
+            course_id: courseId!,
+            title: formData.title,
+            description: formData.description || null,
+            video_url: formData.video_url || null,
+            duration_minutes: formData.duration_minutes,
+            order_index: lessons.length,
+            is_free: formData.is_free,
+          });
+        if (error) throw error;
         toast({ title: "موفق", description: "درس اضافه شد" });
       }
 
@@ -115,101 +126,63 @@ export default function AdminLessons() {
       title: lesson.title,
       description: lesson.description || "",
       video_url: lesson.video_url || "",
-      duration_minutes: lesson.duration_minutes,
-      is_free: lesson.is_free,
+      duration_minutes: lesson.duration_minutes || 0,
+      is_free: lesson.is_free || false,
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (!confirm("آيا از حذف اين درس مطمئن هستيد؟")) return;
-
-    try {
-      const success = lessonsService.deleteLesson(id);
-      if (success) {
-        toast({ title: "موفق", description: "درس حذف شد" });
-        fetchLessons();
-      }
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "خطا", description: error.message });
+  const handleDelete = async (id: string) => {
+    if (!confirm("آیا از حذف این درس مطمئن هستید؟")) return;
+    const { error } = await supabase.from('course_lessons').delete().eq('id', id);
+    if (!error) {
+      toast({ title: "موفق", description: "درس حذف شد" });
+      fetchLessons();
     }
   };
 
   const resetForm = () => {
-    setFormData({
-      title: "",
-      description: "",
-      video_url: "",
-      duration_minutes: 0,
-      is_free: false,
-    });
+    setFormData({ title: "", description: "", video_url: "", duration_minutes: 0, is_free: false });
   };
 
   return (
     <div>
       <div className="flex items-center gap-4 mb-8">
         <Button asChild variant="ghost" size="icon">
-          <Link to="/admin/courses">
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+          <Link to="/admin/courses"><ArrowRight className="w-5 h-5" /></Link>
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-foreground">مدیریت دروس</h1>
-          <p className="text-muted-foreground mt-1">
-            {course?.title || "در حال بارگذاری..."}
-          </p>
+          <p className="text-muted-foreground mt-1">{course?.title || "در حال بارگذاری..."}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2" onClick={() => { setEditingLesson(null); resetForm(); }}>
-              <Plus className="w-4 h-4" />
-              افزودن درس
+              <Plus className="w-4 h-4" />افزودن درس
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingLesson ? "ویرایش درس" : "افزودن درس جدید"}</DialogTitle>
-            </DialogHeader>
+            <DialogHeader><DialogTitle>{editingLesson ? "ویرایش درس" : "افزودن درس جدید"}</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>عنوان درس</Label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
+                <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
               </div>
               <div className="space-y-2">
                 <Label>توضیحات</Label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
+                <Textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
               </div>
               <div className="space-y-2">
                 <Label>آدرس ویدیو</Label>
-                <Input
-                  value={formData.video_url}
-                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
-                  placeholder="https://..."
-                  dir="ltr"
-                />
+                <Input value={formData.video_url} onChange={(e) => setFormData({ ...formData, video_url: e.target.value })} placeholder="https://..." dir="ltr" />
               </div>
               <div className="space-y-2">
                 <Label>مدت (دقیقه)</Label>
-                <Input
-                  type="number"
-                  value={formData.duration_minutes}
-                  onChange={(e) => setFormData({ ...formData, duration_minutes: Number(e.target.value) })}
-                />
+                <Input type="number" value={formData.duration_minutes} onChange={(e) => setFormData({ ...formData, duration_minutes: Number(e.target.value) })} />
               </div>
               <div className="flex items-center gap-2">
-                <Switch 
-                  checked={formData.is_free} 
-                  onCheckedChange={(c) => setFormData({ ...formData, is_free: c })} 
-                />
-                <Label>رایگان (برای پیش‌نمایش)</Label>
+                <Switch checked={formData.is_free} onCheckedChange={(c) => setFormData({ ...formData, is_free: c })} />
+                <Label>رایگان</Label>
               </div>
               <Button type="submit" className="w-full" disabled={saving}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "ذخیره"}
@@ -220,9 +193,7 @@ export default function AdminLessons() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       ) : lessons.length === 0 ? (
         <div className="text-center py-16 bg-card rounded-2xl border border-border">
           <Play className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
@@ -231,13 +202,7 @@ export default function AdminLessons() {
       ) : (
         <div className="space-y-3">
           {lessons.map((lesson, index) => (
-            <motion.div
-              key={lesson.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="flex items-center gap-4 bg-card rounded-xl border border-border p-4"
-            >
+            <motion.div key={lesson.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="flex items-center gap-4 bg-card rounded-xl border border-border p-4">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <span className="font-bold text-primary">{index + 1}</span>
               </div>
@@ -246,18 +211,11 @@ export default function AdminLessons() {
                   <h3 className="font-bold truncate">{lesson.title}</h3>
                   {lesson.is_free && <Badge variant="secondary">رایگان</Badge>}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {lesson.duration_minutes} دقیقه
-                  {lesson.video_url && " • دارای ویدیو"}
-                </p>
+                <p className="text-sm text-muted-foreground">{lesson.duration_minutes || 0} دقیقه{lesson.video_url && " • دارای ویدیو"}</p>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(lesson)}>
-                  <Pencil className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(lesson.id)} className="text-destructive">
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(lesson)}><Pencil className="w-4 h-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleDelete(lesson.id)} className="text-destructive"><Trash2 className="w-4 h-4" /></Button>
               </div>
             </motion.div>
           ))}
