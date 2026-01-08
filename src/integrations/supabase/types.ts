@@ -430,9 +430,12 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          likes_count: number | null
           order_index: number | null
           title: string
           updated_at: string
+          video_url: string | null
+          views_count: number | null
         }
         Insert: {
           category?: string | null
@@ -441,9 +444,12 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          likes_count?: number | null
           order_index?: number | null
           title: string
           updated_at?: string
+          video_url?: string | null
+          views_count?: number | null
         }
         Update: {
           category?: string | null
@@ -452,11 +458,91 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          likes_count?: number | null
           order_index?: number | null
           title?: string
           updated_at?: string
+          video_url?: string | null
+          views_count?: number | null
         }
         Relationships: []
+      }
+      portfolio_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          order_index: number | null
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          order_index?: number | null
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          order_index?: number | null
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      portfolio_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          is_approved: boolean | null
+          portfolio_id: string
+          rating: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          portfolio_id: string
+          rating: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          portfolio_id?: string
+          rating?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_reviews_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolio"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
