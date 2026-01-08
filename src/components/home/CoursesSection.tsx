@@ -7,6 +7,8 @@ import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditableText } from "@/components/visual-editor/EditableText";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
 
 export function CoursesSection() {
   const { data: settings } = useSalonSettings();
@@ -25,22 +27,12 @@ export function CoursesSection() {
     },
   });
 
-  const parseTitle = (title: string) => {
-    const match = title.match(/^(.+?)\s+(\S+)\s+(.+)$/);
-    if (match) {
-      return { main: match[1], highlight: match[2], suffix: match[3] };
-    }
-    return { main: title, highlight: "", suffix: "" };
-  };
-
-  const titleParts = parseTitle(settings?.home_courses_title || "آموزش حرفه‌ای زیبایی");
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
 
   return (
-    <section className="py-24 bg-muted/30">
+    <EditableSection pageKey="home" contentKey="courses_section" defaultBg="bg-muted/30" className="py-24">
       <div className="container">
         {/* Header */}
         <motion.div
@@ -50,13 +42,28 @@ export function CoursesSection() {
           className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12"
         >
           <div>
-            <span className="text-primary font-medium mb-4 block">دوره‌های آموزشی</span>
+            <EditableText
+              pageKey="home"
+              contentKey="courses_label"
+              defaultValue="دوره‌های آموزشی"
+              as="span"
+              className="text-primary font-medium mb-4 block"
+            />
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span> {titleParts.suffix}
+              <EditableText
+                pageKey="home"
+                contentKey="courses_title"
+                defaultValue={settings?.home_courses_title || "آموزش حرفه‌ای زیبایی"}
+                as="span"
+              />
             </h2>
-            <p className="text-muted-foreground max-w-2xl">
-              {settings?.home_courses_subtitle || "با دوره‌های تخصصی ما، مهارت‌های زیبایی خود را ارتقا دهید"}
-            </p>
+            <EditableText
+              pageKey="home"
+              contentKey="courses_subtitle"
+              defaultValue={settings?.home_courses_subtitle || "با دوره‌های تخصصی ما، مهارت‌های زیبایی خود را ارتقا دهید"}
+              as="p"
+              className="text-muted-foreground max-w-2xl"
+            />
           </div>
           <Button asChild variant="outline" className="gap-2 shrink-0">
             <Link to="/courses">
@@ -154,6 +161,6 @@ export function CoursesSection() {
           </div>
         )}
       </div>
-    </section>
+    </EditableSection>
   );
 }

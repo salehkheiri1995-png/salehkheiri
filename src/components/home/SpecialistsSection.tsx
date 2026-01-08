@@ -6,6 +6,8 @@ import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditableText } from "@/components/visual-editor/EditableText";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
 
 export function SpecialistsSection() {
   const { data: settings } = useSalonSettings();
@@ -25,18 +27,8 @@ export function SpecialistsSection() {
     },
   });
 
-  const parseTitle = (title: string) => {
-    const match = title.match(/^(.+?)\s+(\S+)\s+(\S+)$/);
-    if (match) {
-      return { main: match[1], highlight: match[2], suffix: match[3] };
-    }
-    return { main: title, highlight: "", suffix: "" };
-  };
-
-  const titleParts = parseTitle(settings?.home_specialists_title || "متخصصان حرفه‌ای ما");
-
   return (
-    <section className="py-24">
+    <EditableSection pageKey="home" contentKey="specialists_section" className="py-24">
       <div className="container">
         {/* Header */}
         <motion.div
@@ -45,13 +37,28 @@ export function SpecialistsSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <span className="text-primary font-medium mb-4 block">تیم ما</span>
+          <EditableText
+            pageKey="home"
+            contentKey="specialists_label"
+            defaultValue="تیم ما"
+            as="span"
+            className="text-primary font-medium mb-4 block"
+          />
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span> {titleParts.suffix}
+            <EditableText
+              pageKey="home"
+              contentKey="specialists_title"
+              defaultValue={settings?.home_specialists_title || "متخصصان حرفه‌ای ما"}
+              as="span"
+            />
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            {settings?.home_specialists_subtitle || "با بهترین متخصصان زیبایی آشنا شوید"}
-          </p>
+          <EditableText
+            pageKey="home"
+            contentKey="specialists_subtitle"
+            defaultValue={settings?.home_specialists_subtitle || "با بهترین متخصصان زیبایی آشنا شوید"}
+            as="p"
+            className="text-muted-foreground max-w-2xl mx-auto"
+          />
         </motion.div>
 
         {/* Specialists Grid */}
@@ -123,6 +130,6 @@ export function SpecialistsSection() {
           </div>
         )}
       </div>
-    </section>
+    </EditableSection>
   );
 }

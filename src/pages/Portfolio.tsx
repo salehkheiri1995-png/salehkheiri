@@ -6,9 +6,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { EditableText } from "@/components/visual-editor/EditableText";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
 import { 
   Camera, X, Play, Star, Heart, Eye, MessageSquare, 
   Send, ChevronLeft, ChevronRight
@@ -52,7 +54,6 @@ export default function Portfolio() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch categories
   const { data: categories = [] } = useQuery({
     queryKey: ["portfolio-categories"],
     queryFn: async () => {
@@ -66,7 +67,6 @@ export default function Portfolio() {
     },
   });
 
-  // Fetch portfolio items
   const { data: portfolioItems, isLoading } = useQuery({
     queryKey: ["portfolio"],
     queryFn: async () => {
@@ -80,7 +80,6 @@ export default function Portfolio() {
     },
   });
 
-  // Fetch reviews for selected item
   const { data: reviews = [] } = useQuery({
     queryKey: ["portfolio-reviews", selectedItem?.id],
     queryFn: async () => {
@@ -97,7 +96,6 @@ export default function Portfolio() {
     enabled: !!selectedItem,
   });
 
-  // Increment view count
   const incrementViewMutation = useMutation({
     mutationFn: async (id: string) => {
       const { data: current } = await supabase
@@ -112,7 +110,6 @@ export default function Portfolio() {
     },
   });
 
-  // Submit review
   const submitReviewMutation = useMutation({
     mutationFn: async ({ portfolioId, rating, comment }: { portfolioId: string; rating: number; comment: string }) => {
       const { error } = await supabase.from("portfolio_reviews").insert([{
@@ -162,7 +159,6 @@ export default function Portfolio() {
     });
   };
 
-  // Navigate between items in modal
   const navigateItem = (direction: 'prev' | 'next') => {
     if (!selectedItem || !filteredItems) return;
     const currentIndex = filteredItems.findIndex(item => item.id === selectedItem.id);
@@ -177,147 +173,165 @@ export default function Portfolio() {
       <Header />
       
       <main className="pt-24 pb-16">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-              <Camera className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">نمونه‌کارها</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              مجموعه‌ای از بهترین کارهای انجام شده توسط متخصصین ما
-            </p>
-          </motion.div>
-
-          {/* Category Filter */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="flex flex-wrap justify-center gap-2 mb-8"
-          >
-            {allCategories.map((category) => (
-              <Button
-                key={category.id}
-                variant={selectedCategory === category.slug ? "default" : "outline"}
-                onClick={() => setSelectedCategory(category.slug)}
-                className="rounded-full gap-2"
-                style={selectedCategory === category.slug ? {
-                  backgroundColor: category.color,
-                  borderColor: category.color,
-                } : {}}
-              >
-                {category.slug !== "all" && (
-                  <div 
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: selectedCategory === category.slug ? "#fff" : category.color }}
-                  />
-                )}
-                {category.name}
-              </Button>
-            ))}
-          </motion.div>
-
-          {/* Loading State */}
-          {isLoading && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <Skeleton key={i} className="aspect-square rounded-xl" />
-              ))}
-            </div>
-          )}
-
-          {/* Portfolio Grid */}
-          {!isLoading && (
-            <motion.div 
-              layout
-              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        <EditableSection pageKey="portfolio" contentKey="hero" className="pb-8">
+          <div className="container">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-12"
             >
-              <AnimatePresence>
-                {filteredItems?.map((item, index) => {
-                  const categoryInfo = getCategoryInfo(item.category);
-                  return (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer bg-muted"
-                      onClick={() => openItemDetail(item)}
-                    >
-                      <img
-                        src={item.image_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&h=500&fit=crop"}
-                        alt={item.title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&h=500&fit=crop";
-                        }}
-                      />
-                      
-                      {/* Video indicator */}
-                      {item.video_url && (
-                        <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
-                          <Play className="w-5 h-5 text-white fill-white" />
-                        </div>
-                      )}
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+                <Camera className="w-8 h-8 text-primary" />
+              </div>
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                <EditableText
+                  pageKey="portfolio"
+                  contentKey="title"
+                  defaultValue="نمونه‌کارها"
+                  as="span"
+                />
+              </h1>
+              <EditableText
+                pageKey="portfolio"
+                contentKey="subtitle"
+                defaultValue="مجموعه‌ای از بهترین کارهای انجام شده توسط متخصصین ما"
+                as="p"
+                multiline
+                className="text-muted-foreground max-w-2xl mx-auto"
+              />
+            </motion.div>
 
-                      {/* Category badge */}
-                      <div className="absolute top-3 left-3">
-                        <Badge 
-                          style={{ 
-                            backgroundColor: `${categoryInfo.color}dd`,
-                            color: "#fff",
+            {/* Category Filter */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="flex flex-wrap justify-center gap-2 mb-8"
+            >
+              {allCategories.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.slug ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category.slug)}
+                  className="rounded-full gap-2"
+                  style={selectedCategory === category.slug ? {
+                    backgroundColor: category.color,
+                    borderColor: category.color,
+                  } : {}}
+                >
+                  {category.slug !== "all" && (
+                    <div 
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: selectedCategory === category.slug ? "#fff" : category.color }}
+                    />
+                  )}
+                  {category.name}
+                </Button>
+              ))}
+            </motion.div>
+
+            {/* Loading State */}
+            {isLoading && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {[...Array(8)].map((_, i) => (
+                  <Skeleton key={i} className="aspect-square rounded-xl" />
+                ))}
+              </div>
+            )}
+
+            {/* Portfolio Grid */}
+            {!isLoading && (
+              <motion.div 
+                layout
+                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+              >
+                <AnimatePresence>
+                  {filteredItems?.map((item, index) => {
+                    const categoryInfo = getCategoryInfo(item.category);
+                    return (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group relative aspect-square rounded-xl overflow-hidden cursor-pointer bg-muted"
+                        onClick={() => openItemDetail(item)}
+                      >
+                        <img
+                          src={item.image_url || "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&h=500&fit=crop"}
+                          alt={item.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=500&h=500&fit=crop";
                           }}
-                        >
-                          {categoryInfo.name}
-                        </Badge>
-                      </div>
+                        />
+                        
+                        {item.video_url && (
+                          <div className="absolute top-3 right-3 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center">
+                            <Play className="w-5 h-5 text-white fill-white" />
+                          </div>
+                        )}
 
-                      {/* Hover overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <h3 className="text-white font-bold text-sm mb-1">{item.title}</h3>
-                          {item.description && (
-                            <p className="text-white/80 text-xs line-clamp-2 mb-2">{item.description}</p>
-                          )}
-                          <div className="flex items-center gap-3 text-white/70 text-xs">
-                            <span className="flex items-center gap-1">
-                              <Eye className="w-3 h-3" />
-                              {item.views_count || 0}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Heart className="w-3 h-3" />
-                              {item.likes_count || 0}
-                            </span>
+                        <div className="absolute top-3 left-3">
+                          <Badge 
+                            style={{ 
+                              backgroundColor: `${categoryInfo.color}dd`,
+                              color: "#fff",
+                            }}
+                          >
+                            {categoryInfo.name}
+                          </Badge>
+                        </div>
+
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <h3 className="text-white font-bold text-sm mb-1">{item.title}</h3>
+                            {item.description && (
+                              <p className="text-white/80 text-xs line-clamp-2 mb-2">{item.description}</p>
+                            )}
+                            <div className="flex items-center gap-3 text-white/70 text-xs">
+                              <span className="flex items-center gap-1">
+                                <Eye className="w-3 h-3" />
+                                {item.views_count || 0}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3 h-3" />
+                                {item.likes_count || 0}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </motion.div>
-          )}
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </motion.div>
+            )}
 
-          {/* Empty State */}
-          {!isLoading && (!filteredItems || filteredItems.length === 0) && (
-            <div className="text-center py-16">
-              <Camera className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">نمونه‌کاری یافت نشد</h3>
-              <p className="text-muted-foreground">
-                {selectedCategory === "all"
-                  ? "هنوز نمونه‌کاری اضافه نشده است"
-                  : "در این دسته‌بندی نمونه‌کاری وجود ندارد"}
-              </p>
-            </div>
-          )}
-        </div>
+            {/* Empty State */}
+            {!isLoading && (!filteredItems || filteredItems.length === 0) && (
+              <div className="text-center py-16">
+                <Camera className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">
+                  <EditableText
+                    pageKey="portfolio"
+                    contentKey="empty_title"
+                    defaultValue="نمونه‌کاری یافت نشد"
+                    as="span"
+                  />
+                </h3>
+                <p className="text-muted-foreground">
+                  {selectedCategory === "all"
+                    ? "هنوز نمونه‌کاری اضافه نشده است"
+                    : "در این دسته‌بندی نمونه‌کاری وجود ندارد"}
+                </p>
+              </div>
+            )}
+          </div>
+        </EditableSection>
       </main>
 
       {/* Detail Modal */}
@@ -325,7 +339,6 @@ export default function Portfolio() {
         <DialogContent className="max-w-4xl p-0 overflow-hidden bg-background border-none max-h-[90vh] overflow-y-auto">
           {selectedItem && (
             <div className="relative">
-              {/* Close button */}
               <button
                 onClick={() => setSelectedItem(null)}
                 className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
@@ -333,7 +346,6 @@ export default function Portfolio() {
                 <X className="w-5 h-5" />
               </button>
 
-              {/* Navigation buttons */}
               <button
                 onClick={() => navigateItem('prev')}
                 className="absolute left-4 top-1/3 z-20 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
@@ -347,7 +359,6 @@ export default function Portfolio() {
                 <ChevronRight className="w-5 h-5" />
               </button>
 
-              {/* Media */}
               <div className="relative aspect-video bg-black">
                 {selectedItem.video_url ? (
                   <video
@@ -365,7 +376,6 @@ export default function Portfolio() {
                 )}
               </div>
 
-              {/* Content */}
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div>
@@ -396,14 +406,12 @@ export default function Portfolio() {
                   <p className="text-muted-foreground mb-6">{selectedItem.description}</p>
                 )}
 
-                {/* Reviews Section */}
                 <div className="border-t pt-6">
                   <h3 className="font-bold mb-4 flex items-center gap-2">
                     <MessageSquare className="w-5 h-5" />
                     نظرات ({reviews.length})
                   </h3>
 
-                  {/* Add Review Form */}
                   {user && (
                     <div className="bg-muted/50 rounded-lg p-4 mb-4">
                       <div className="flex items-center gap-2 mb-3">
@@ -447,45 +455,38 @@ export default function Portfolio() {
                     </div>
                   )}
 
-                  {!user && (
-                    <p className="text-sm text-muted-foreground mb-4">
-                      برای ثبت نظر، ابتدا وارد حساب کاربری خود شوید.
+                  {reviews.length > 0 ? (
+                    <div className="space-y-4">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="bg-muted/30 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="flex">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 ${
+                                    star <= review.rating
+                                      ? "text-yellow-500 fill-yellow-500"
+                                      : "text-muted-foreground"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(review.created_at).toLocaleDateString("fa-IR")}
+                            </span>
+                          </div>
+                          {review.comment && (
+                            <p className="text-sm">{review.comment}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-center py-4">
+                      هنوز نظری ثبت نشده است
                     </p>
                   )}
-
-                  {/* Reviews List */}
-                  <div className="space-y-4">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="border rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="flex">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-4 h-4 ${
-                                  star <= review.rating
-                                    ? "text-yellow-500 fill-yellow-500"
-                                    : "text-muted-foreground"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(review.created_at).toLocaleDateString("fa-IR")}
-                          </span>
-                        </div>
-                        {review.comment && (
-                          <p className="text-sm">{review.comment}</p>
-                        )}
-                      </div>
-                    ))}
-
-                    {reviews.length === 0 && (
-                      <p className="text-center text-muted-foreground py-4">
-                        هنوز نظری ثبت نشده است. اولین نظر را شما بنویسید!
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
             </div>

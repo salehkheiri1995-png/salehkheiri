@@ -9,6 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useSalonSettings } from "@/hooks/useSalonSettings";
+import { EditableText } from "@/components/visual-editor/EditableText";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
 import { 
   Phone, 
   Mail, 
@@ -35,7 +37,6 @@ export default function Contact() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     toast({
@@ -85,18 +86,34 @@ export default function Contact() {
       <Header />
       
       <main className="pt-24 pb-16">
-        <div className="container max-w-6xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">تماس با ما</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              سوالی دارید؟ با ما در تماس باشید. تیم پشتیبانی ما آماده پاسخگویی به شماست.
-            </p>
-          </motion.div>
+        <EditableSection pageKey="contact" contentKey="hero" className="pb-8">
+          <div className="container max-w-6xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-12"
+            >
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                <EditableText
+                  pageKey="contact"
+                  contentKey="title"
+                  defaultValue="تماس با ما"
+                  as="span"
+                />
+              </h1>
+              <EditableText
+                pageKey="contact"
+                contentKey="subtitle"
+                defaultValue="سوالی دارید؟ با ما در تماس باشید. تیم پشتیبانی ما آماده پاسخگویی به شماست."
+                as="p"
+                multiline
+                className="text-muted-foreground max-w-2xl mx-auto"
+              />
+            </motion.div>
+          </div>
+        </EditableSection>
 
+        <div className="container max-w-6xl">
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Contact Form */}
             <motion.div
@@ -106,7 +123,14 @@ export default function Contact() {
             >
               <Card>
                 <CardContent className="p-6">
-                  <h2 className="text-xl font-bold mb-6">ارسال پیام</h2>
+                  <h2 className="text-xl font-bold mb-6">
+                    <EditableText
+                      pageKey="contact"
+                      contentKey="form_title"
+                      defaultValue="ارسال پیام"
+                      as="span"
+                    />
+                  </h2>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
@@ -196,7 +220,14 @@ export default function Contact() {
               {/* Social Links */}
               <Card>
                 <CardContent className="p-6">
-                  <h3 className="font-bold mb-4">ما را در شبکه‌های اجتماعی دنبال کنید</h3>
+                  <h3 className="font-bold mb-4">
+                    <EditableText
+                      pageKey="contact"
+                      contentKey="social_title"
+                      defaultValue="ما را در شبکه‌های اجتماعی دنبال کنید"
+                      as="span"
+                    />
+                  </h3>
                   <div className="flex gap-3">
                     {settings?.instagram_url && (
                       <a
@@ -237,7 +268,12 @@ export default function Contact() {
                 <div className="aspect-video bg-muted flex items-center justify-center">
                   <div className="text-center text-muted-foreground">
                     <MapPin className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>نقشه در این قسمت نمایش داده می‌شود</p>
+                    <EditableText
+                      pageKey="contact"
+                      contentKey="map_placeholder"
+                      defaultValue="نقشه در این قسمت نمایش داده می‌شود"
+                      as="p"
+                    />
                   </div>
                 </div>
               </Card>
