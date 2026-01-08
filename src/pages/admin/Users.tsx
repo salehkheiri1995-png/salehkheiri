@@ -53,10 +53,10 @@ interface User {
   full_name: string | null;
   phone: string | null;
   created_at: string;
-  orders_count?: number;
-  bookings_count?: number;
-  enrollments_count?: number;
-  role?: 'admin' | 'moderator' | 'user';
+  orders_count: number;
+  bookings_count: number;
+  enrollments_count: number;
+  role: 'admin' | 'moderator' | 'user';
 }
 
 const STATUS_LABELS: Record<string, string> = {

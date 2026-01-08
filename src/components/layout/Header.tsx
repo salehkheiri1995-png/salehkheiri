@@ -9,14 +9,14 @@ import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { supabase } from "@/integrations/supabase/client";
 
-const navLinks = [
-  { href: "/", label: "خانه" },
-  { href: "/services", label: "خدمات" },
-  { href: "/portfolio", label: "نمونه‌کارها" },
-  { href: "/specialists", label: "متخصصان" },
-  { href: "/courses", label: "دوره‌های آموزشی" },
-  { href: "/shop", label: "فروشگاه" },
-  { href: "/booking", label: "رزرو نوبت" },
+const allNavLinks = [
+  { href: "/", label: "خانه", section: null },
+  { href: "/services", label: "خدمات", section: "services" },
+  { href: "/portfolio", label: "نمونه‌کارها", section: "portfolio" },
+  { href: "/specialists", label: "متخصصان", section: "specialists" },
+  { href: "/courses", label: "دوره‌های آموزشی", section: "courses" },
+  { href: "/shop", label: "فروشگاه", section: "shop" },
+  { href: "/booking", label: "رزرو نوبت", section: "booking" },
 ];
 
 export function Header() {
@@ -27,6 +27,12 @@ export function Header() {
   const { user, isAdmin } = useAuth();
   const { totalItems } = useCart();
   const { data: settings } = useSalonSettings();
+
+  const navLinks = allNavLinks.filter(link => {
+    if (!link.section) return true;
+    const key = `section_${link.section}_enabled` as keyof typeof settings;
+    return settings?.[key] !== false;
+  });
 
   const handleLogout = async () => {
     try {
