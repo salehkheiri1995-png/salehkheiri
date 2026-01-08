@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -70,6 +71,7 @@ export default function AdminPortfolio() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("items");
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -350,6 +352,43 @@ export default function AdminPortfolio() {
     { value: "#14B8A6", label: "فیروزه‌ای" },
   ];
 
+  // Select/Deselect handlers
+  const toggleSelectItem = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedItems.size === filteredItems.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(filteredItems.map(item => item.id)));
+    }
+  };
+
+  const deleteSelectedItems = async () => {
+    if (selectedItems.size === 0) {
+      toast({ title: "لطفاً یک نمونه‌کار را انتخاب کنید", variant: "destructive" });
+      return;
+    }
+
+    if (!confirm(`آیا از حذف ${selectedItems.size} نمونه‌کار مطمئن هستید؟`)) {
+      return;
+    }
+
+    for (const id of selectedItems) {
+      await supabase.from("portfolio").delete().eq("id", id);
+    }
+    queryClient.invalidateQueries({ queryKey: ["admin-portfolio"] });
+    setSelectedItems(new Set());
+    toast({ title: `${selectedItems.size} نمونه‌کار با موفقیت حذف شد` });
+  };
+
   return (
     <div className="space-y-6" dir="rtl">
       <div className="flex items-center justify-between">
@@ -433,7 +472,14 @@ export default function AdminPortfolio() {
           <Card>
             <CardHeader>
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <CardTitle>لیست نمونه‌کارها</CardTitle>
+                <CardTitle>
+                  لیست نمونه‌کارها
+                  {selectedItems.size > 0 && (
+                    <span className="text-sm text-muted-foreground mr-2">
+                      ({selectedItems.size} انتخاب شده)
+                    </span>
+                  )}
+                </CardTitle>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                     <SelectTrigger className="w-full sm:w-[200px]">
@@ -455,6 +501,17 @@ export default function AdminPortfolio() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedItems.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={deleteSelectedItems}
+                      className="w-full sm:w-auto"
+                    >
+                      <Trash2 className="w-4 h-4 ml-2" />
+                      حذف انتخاب شده‌ها
+                    </Button>
+                  )}
                   <Button onClick={() => openDialog()} className="w-full sm:w-auto">
                     <Plus className="w-4 h-4 ml-2" />
                     افزودن نمونه‌کار
@@ -467,7 +524,14 @@ export default function AdminPortfolio() {
                 <Table className="w-full">
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-12 text-center px-3 py-3">ترتیب</TableHead>
+                      <TableHead className="w-12 text-center px-3 py-3">
+                        <Checkbox
+                          checked={selectedItems.size > 0 && selectedItems.size === filteredItems.length}
+                          indeterminate={selectedItems.size > 0 && selectedItems.size < filteredItems.length}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead className="w-12 text-center px-3 py-3 border-r">ترتیب</TableHead>
                       <TableHead className="w-20 text-center px-3 py-3 border-r">رسانه</TableHead>
                       <TableHead className="min-w-48 text-right px-3 py-3 border-r">عنوان</TableHead>
                       <TableHead className="w-32 text-right px-3 py-3 border-r">دسته‌بندی</TableHead>
@@ -479,13 +543,13 @@ export default function AdminPortfolio() {
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-12">
+                        <TableCell colSpan={8} className="text-center py-12">
                           در حال بارگذاری...
                         </TableCell>
                       </TableRow>
                     ) : filteredItems.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
                           <div className="flex items-center justify-center gap-2">
                             <AlertCircle className="w-4 h-4" />
                             {selectedCategory === "all" 
@@ -497,9 +561,19 @@ export default function AdminPortfolio() {
                       </TableRow>
                     ) : (
                       filteredItems.map((item) => (
-                        <TableRow key={item.id} className="border-b transition-colors hover:bg-muted/30">
-                          {/* ترتیب */}
+                        <TableRow key={item.id} className={`border-b transition-colors hover:bg-muted/30 ${
+                          selectedItems.has(item.id) ? "bg-primary/5" : ""
+                        }`}>
+                          {/* Checkbox */}
                           <TableCell className="w-12 text-center px-3 py-3 align-middle">
+                            <Checkbox
+                              checked={selectedItems.has(item.id)}
+                              onCheckedChange={() => toggleSelectItem(item.id)}
+                            />
+                          </TableCell>
+
+                          {/* ترتیب */}
+                          <TableCell className="w-12 text-center px-3 py-3 align-middle border-r">
                             <GripVertical className="w-4 h-4 text-muted-foreground inline cursor-grab" />
                           </TableCell>
 
