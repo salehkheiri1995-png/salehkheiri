@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/hooks/useCart";
 import { toast } from "sonner";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
+import { EditableText } from "@/components/visual-editor/EditableText";
 
 export default function Shop() {
   const { addItem, items } = useCart();
@@ -53,19 +55,44 @@ export default function Shop() {
       <main className="pt-24 pb-16">
         <div className="container">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-          >
-            <span className="text-primary font-medium mb-4 block">فروشگاه</span>
-            <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              محصولات <span className="gradient-text">زیبایی</span>
-            </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              بهترین محصولات زیبایی با ضمانت اصالت کالا
-            </p>
-          </motion.div>
+          <EditableSection pageKey="shop" contentKey="header_section" defaultBg="transparent" className="mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <EditableText
+                pageKey="shop"
+                contentKey="page_label"
+                defaultValue="فروشگاه"
+                as="span"
+                className="text-primary font-medium mb-4 block"
+              />
+              <h1 className="text-3xl md:text-5xl font-bold mb-4">
+                <EditableText
+                  pageKey="shop"
+                  contentKey="page_title"
+                  defaultValue="محصولات"
+                  as="span"
+                />{" "}
+                <span className="gradient-text">
+                  <EditableText
+                    pageKey="shop"
+                    contentKey="page_title_highlight"
+                    defaultValue="زیبایی"
+                    as="span"
+                  />
+                </span>
+              </h1>
+              <EditableText
+                pageKey="shop"
+                contentKey="page_description"
+                defaultValue="بهترین محصولات زیبایی با ضمانت اصالت کالا"
+                as="p"
+                className="text-muted-foreground max-w-2xl mx-auto"
+              />
+            </motion.div>
+          </EditableSection>
 
           {/* Products Grid */}
           {isLoading ? (
@@ -163,13 +190,21 @@ export default function Shop() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16">
-              <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">هنوز محصولی اضافه نشده است</p>
-              <Button asChild variant="outline" className="mt-4">
-                <Link to="/">بازگشت به خانه</Link>
-              </Button>
-            </div>
+            <EditableSection pageKey="shop" contentKey="empty_section" defaultBg="transparent">
+              <div className="text-center py-16">
+                <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <EditableText
+                  pageKey="shop"
+                  contentKey="empty_title"
+                  defaultValue="هنوز محصولی اضافه نشده است"
+                  as="p"
+                  className="text-muted-foreground text-lg"
+                />
+                <Button asChild variant="outline" className="mt-4">
+                  <Link to="/">بازگشت به خانه</Link>
+                </Button>
+              </div>
+            </EditableSection>
           )}
         </div>
       </main>

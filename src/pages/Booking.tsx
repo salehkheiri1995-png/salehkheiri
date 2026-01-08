@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
+import { EditableText } from "@/components/visual-editor/EditableText";
 
 const timeSlots = [
   "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
@@ -89,11 +91,10 @@ export default function Booking() {
         .in("status", ["pending", "confirmed"]);
       
       if (error) throw error;
-      // Convert HH:MM:SS to HH:MM format
       return data?.map(b => {
         const time = b.booking_time;
         if (typeof time === "string" && time.includes(":")) {
-          return time.substring(0, 5); // Takes first 5 chars: HH:MM
+          return time.substring(0, 5);
         }
         return time;
       }) || [];
@@ -288,19 +289,44 @@ export default function Booking() {
       
       <main className="pt-24 pb-16">
         <div className="container max-w-4xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <span className="text-primary font-medium mb-4 block">رزرو آنلاین</span>
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              رزرو <span className="gradient-text">نوبت</span>
-            </h1>
-            <p className="text-muted-foreground">
-              در چند مرحله ساده نوبت خود را رزرو کنید
-            </p>
-          </motion.div>
+          <EditableSection pageKey="booking" contentKey="header_section" defaultBg="transparent" className="mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <EditableText
+                pageKey="booking"
+                contentKey="page_label"
+                defaultValue="رزرو آنلاین"
+                as="span"
+                className="text-primary font-medium mb-4 block"
+              />
+              <h1 className="text-3xl md:text-4xl font-bold mb-4">
+                <EditableText
+                  pageKey="booking"
+                  contentKey="page_title"
+                  defaultValue="رزرو"
+                  as="span"
+                />{" "}
+                <span className="gradient-text">
+                  <EditableText
+                    pageKey="booking"
+                    contentKey="page_title_highlight"
+                    defaultValue="نوبت"
+                    as="span"
+                  />
+                </span>
+              </h1>
+              <EditableText
+                pageKey="booking"
+                contentKey="page_description"
+                defaultValue="در چند مرحله ساده نوبت خود را رزرو کنید"
+                as="p"
+                className="text-muted-foreground"
+              />
+            </motion.div>
+          </EditableSection>
 
           <div className="flex justify-center mb-12">
             <div className="flex items-center gap-2 md:gap-4">
@@ -459,11 +485,11 @@ export default function Booking() {
                                 : "border-border hover:border-primary/50"
                             )}
                           >
-                            <span className="text-sm font-medium">{date.label}</span>
-                            {selectedDate === date.value && availableSlots !== null && (
-                              <span className="text-xs text-muted-foreground block mt-1">
-                                {availableSlots} ساعت آزاد
-                              </span>
+                            <div className="text-sm font-medium">{date.label}</div>
+                            {availableSlots !== null && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {availableSlots} نوبت خالی
+                              </div>
                             )}
                           </button>
                         );
@@ -471,74 +497,41 @@ export default function Booking() {
                     </div>
                   </div>
 
-                  <div>
-                    <Label className="mb-3 block">
-                      ساعت {bookedTimesLoading && "(در حال بارگیری...)"}
-                    </Label>
-                    {bookedTimesLoading ? (
-                      <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
-                        {timeSlots.map((time) => (
-                          <Skeleton key={time} className="h-16 rounded-lg" />
-                        ))}
-                      </div>
-                    ) : (
-                      <>
+                  {selectedDate && (
+                    <div>
+                      <Label className="mb-3 block">ساعت</Label>
+                      {bookedTimesLoading ? (
+                        <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
+                          {[...Array(12)].map((_, i) => (
+                            <Skeleton key={i} className="h-10 rounded-lg" />
+                          ))}
+                        </div>
+                      ) : (
                         <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
                           {timeSlots.map((time) => {
                             const booked = isTimeBooked(time);
-                            const selected = selectedTime === time;
-                            
                             return (
                               <button
                                 key={time}
-                                type="button"
-                                onClick={() => {
-                                  if (!booked) setSelectedTime(time);
-                                }}
+                                onClick={() => !booked && setSelectedTime(time)}
                                 disabled={booked}
                                 className={cn(
-                                  "px-3 py-3 rounded-lg border-2 text-center transition-all font-medium text-sm min-h-20 flex flex-col items-center justify-center",
+                                  "py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all",
                                   booked
-                                    ? "border-red-500 bg-red-100 text-red-700 cursor-not-allowed opacity-100 pointer-events-none"
-                                    : selected
+                                    ? "border-border bg-muted text-muted-foreground cursor-not-allowed line-through"
+                                    : selectedTime === time
                                     ? "border-primary bg-primary text-primary-foreground"
-                                    : "border-green-300 bg-green-50 text-gray-700 hover:border-green-500 hover:bg-green-100 cursor-pointer"
+                                    : "border-border hover:border-primary/50"
                                 )}
-                                title={booked ? "این ساعت رزرو شده است" : ""}
                               >
-                                {booked ? (
-                                  <>
-                                    <X className="w-4 h-4 mb-0.5" />
-                                    <span className="text-xs">{time}</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Clock className="w-4 h-4 mb-0.5" />
-                                    <span className="text-sm">{time}</span>
-                                  </>
-                                )}
+                                {time}
                               </button>
                             );
                           })}
                         </div>
-                        <div className="mt-4 flex gap-6 text-sm">
-                          <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 bg-green-50 border-2 border-green-300 rounded"></div>
-                            <span className="text-gray-700 font-medium">ساعت آزاد</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="w-5 h-5 bg-red-100 border-2 border-red-500 rounded"></div>
-                            <span className="text-red-700 font-medium">رزرو شده</span>
-                          </div>
-                        </div>
-                      </>
-                    )}
-                    {selectedDate && bookedTimes && bookedTimes.length > 0 && (
-                      <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                        <strong>ساعت‌های اشغال شده:</strong> {bookedTimes.join(", ")}
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -547,10 +540,11 @@ export default function Booking() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                 >
-                  <h2 className="text-xl font-bold mb-6">اطلاعات تماس و تأیید</h2>
+                  <h2 className="text-xl font-bold mb-6">تأیید نهایی</h2>
                   
-                  <div className="bg-muted/50 rounded-xl p-4 mb-6">
-                    <h3 className="font-bold mb-3">خلاصه رزرو</h3>
+                  {/* Summary */}
+                  <div className="bg-muted/30 rounded-xl p-4 mb-6">
+                    <h3 className="font-medium mb-3">خلاصه رزرو</h3>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">خدمت:</span>
@@ -563,7 +557,12 @@ export default function Booking() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">تاریخ:</span>
                         <span className="font-medium">
-                          {selectedDate && new Date(selectedDate).toLocaleDateString("fa-IR")}
+                          {new Date(selectedDate).toLocaleDateString("fa-IR", {
+                            weekday: "long",
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          })}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -579,6 +578,7 @@ export default function Booking() {
                     </div>
                   </div>
 
+                  {/* Customer Info */}
                   <div className="space-y-4">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
@@ -597,7 +597,7 @@ export default function Booking() {
                           id="phone"
                           value={customerInfo.phone}
                           onChange={(e) => setCustomerInfo({ ...customerInfo, phone: e.target.value })}
-                          placeholder="09121234567"
+                          placeholder="09xxxxxxxxx"
                           className="mt-1"
                           dir="ltr"
                         />
@@ -621,7 +621,7 @@ export default function Booking() {
                         id="notes"
                         value={customerInfo.notes}
                         onChange={(e) => setCustomerInfo({ ...customerInfo, notes: e.target.value })}
-                        placeholder="اگر توضیحات خاصی دارید اینجا بنویسید..."
+                        placeholder="توضیحات اضافی..."
                         className="mt-1"
                         rows={3}
                       />
@@ -630,6 +630,7 @@ export default function Booking() {
                 </motion.div>
               )}
 
+              {/* Navigation */}
               <div className="flex justify-between mt-8 pt-6 border-t border-border">
                 <Button
                   variant="outline"
@@ -638,7 +639,7 @@ export default function Booking() {
                   className="gap-2"
                 >
                   <ArrowRight className="w-4 h-4" />
-                  مرحله قبل
+                  قبلی
                 </Button>
                 
                 {currentStep < 4 ? (
@@ -647,7 +648,7 @@ export default function Booking() {
                     disabled={!canProceed()}
                     className="gap-2"
                   >
-                    مرحله بعد
+                    بعدی
                     <ArrowLeft className="w-4 h-4" />
                   </Button>
                 ) : (
@@ -656,7 +657,7 @@ export default function Booking() {
                     disabled={!canProceed() || createBooking.isPending}
                     className="gap-2"
                   >
-                    {createBooking.isPending ? "در حال ثبت..." : "ثبت رزرو"}
+                    {createBooking.isPending ? "در حال ثبت..." : "تأیید و ثبت رزرو"}
                     <Check className="w-4 h-4" />
                   </Button>
                 )}

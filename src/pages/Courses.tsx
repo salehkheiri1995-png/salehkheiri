@@ -9,6 +9,8 @@ import { Footer } from "@/components/layout/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
+import { EditableText } from "@/components/visual-editor/EditableText";
 
 interface Course {
   id: string;
@@ -70,19 +72,50 @@ export default function Courses() {
       <main className="pt-24 pb-16">
         <div className="container">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-16"
-          >
-            <span className="text-primary font-medium mb-4 block">دوره‌های آموزشی</span>
-            <h1 className="text-3xl md:text-5xl font-bold mb-4">
-              آموزش <span className="gradient-text">حرفه‌ای</span> زیبایی
-            </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              با دوره‌های تخصصی ما، مهارت‌های زیبایی خود را ارتقا دهید
-            </p>
-          </motion.div>
+          <EditableSection pageKey="courses" contentKey="header_section" defaultBg="transparent" className="mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <EditableText
+                pageKey="courses"
+                contentKey="page_label"
+                defaultValue="دوره‌های آموزشی"
+                as="span"
+                className="text-primary font-medium mb-4 block"
+              />
+              <h1 className="text-3xl md:text-5xl font-bold mb-4">
+                <EditableText
+                  pageKey="courses"
+                  contentKey="page_title"
+                  defaultValue="آموزش"
+                  as="span"
+                />{" "}
+                <span className="gradient-text">
+                  <EditableText
+                    pageKey="courses"
+                    contentKey="page_title_highlight"
+                    defaultValue="حرفه‌ای"
+                    as="span"
+                  />
+                </span>{" "}
+                <EditableText
+                  pageKey="courses"
+                  contentKey="page_title_suffix"
+                  defaultValue="زیبایی"
+                  as="span"
+                />
+              </h1>
+              <EditableText
+                pageKey="courses"
+                contentKey="page_description"
+                defaultValue="با دوره‌های تخصصی ما، مهارت‌های زیبایی خود را ارتقا دهید"
+                as="p"
+                className="text-muted-foreground max-w-2xl mx-auto"
+              />
+            </motion.div>
+          </EditableSection>
 
           {/* Courses Grid */}
           {isLoading ? (
@@ -178,13 +211,21 @@ export default function Courses() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16">
-              <GraduationCap className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-muted-foreground text-lg">هنوز دوره‌ای اضافه نشده است</p>
-              <Button asChild variant="outline" className="mt-4">
-                <Link to="/">بازگشت به خانه</Link>
-              </Button>
-            </div>
+            <EditableSection pageKey="courses" contentKey="empty_section" defaultBg="transparent">
+              <div className="text-center py-16">
+                <GraduationCap className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+                <EditableText
+                  pageKey="courses"
+                  contentKey="empty_title"
+                  defaultValue="هنوز دوره‌ای اضافه نشده است"
+                  as="p"
+                  className="text-muted-foreground text-lg"
+                />
+                <Button asChild variant="outline" className="mt-4">
+                  <Link to="/">بازگشت به خانه</Link>
+                </Button>
+              </div>
+            </EditableSection>
           )}
         </div>
       </main>
