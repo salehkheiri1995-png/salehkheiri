@@ -8,7 +8,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import api from "@/services/api";
+import { externalDbApi } from "@/services/externalDbApi";
 
 interface Course {
   id: string;
@@ -35,7 +35,7 @@ export default function Courses() {
     const fetchCourses = async () => {
       try {
         setIsLoading(true);
-        const data = await api.courses.getAll();
+        const data = await externalDbApi.courses.getAll();
         setCourses(data || []);
       } catch (error) {
         console.error('خطا در دریافت دوره‌ها:', error);
