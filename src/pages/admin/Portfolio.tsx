@@ -36,7 +36,7 @@ import {
   Plus, Pencil, Trash2, Camera, GripVertical, AlertCircle, 
   Filter, Video, Eye, Heart, Tag, Palette, Settings, LayoutGrid
 } from "lucide-react";
-import { motion, Reorder } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface PortfolioItem {
   id: string;
@@ -69,7 +69,6 @@ export default function AdminPortfolio() {
   const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [orderedItems, setOrderedItems] = useState<PortfolioItem[]>([]);
   const [activeTab, setActiveTab] = useState("items");
   const [formData, setFormData] = useState({
     title: "",
@@ -114,46 +113,6 @@ export default function AdminPortfolio() {
       return data as PortfolioItem[];
     },
   });
-
-  // Update ordered items when portfolio data changes or filter changes
-  useEffect(() => {
-    if (portfolioItems) {
-      const filtered = selectedCategory === "all" 
-        ? portfolioItems 
-        : portfolioItems.filter(item => item.category === selectedCategory);
-      setOrderedItems(filtered);
-    }
-  }, [portfolioItems, selectedCategory]);
-
-  // Mutations for portfolio items
-  const updateOrderMutation = useMutation({
-    mutationFn: async (items: PortfolioItem[]) => {
-      const updates = items.map((item, index) => ({
-        id: item.id,
-        order_index: index,
-      }));
-
-      for (const update of updates) {
-        const { error } = await supabase
-          .from("portfolio")
-          .update({ order_index: update.order_index })
-          .eq("id", update.id);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-portfolio"] });
-      toast({ title: "ترتیب نمونه‌کارها با موفقیت ذخیره شد" });
-    },
-    onError: () => {
-      toast({ title: "خطا در ذخیره ترتیب", variant: "destructive" });
-    },
-  });
-
-  const handleReorder = (newOrder: PortfolioItem[]) => {
-    setOrderedItems(newOrder);
-    updateOrderMutation.mutate(newOrder);
-  };
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -351,7 +310,6 @@ export default function AdminPortfolio() {
 
   const handleCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Auto-generate slug from name if empty
     const slug = categoryFormData.slug || categoryFormData.name.toLowerCase().replace(/\s+/g, '-');
     const dataToSubmit = { ...categoryFormData, slug };
     
@@ -369,6 +327,10 @@ export default function AdminPortfolio() {
   const getCategoryColor = (categorySlug: string | null) => {
     return categories.find((c) => c.slug === categorySlug)?.color || "#6366f1";
   };
+
+  const filteredItems = selectedCategory === "all" 
+    ? portfolioItems || [] 
+    : (portfolioItems || []).filter(item => item.category === selectedCategory);
 
   const filteredStats = {
     total: portfolioItems?.length || 0,
@@ -505,12 +467,12 @@ export default function AdminPortfolio() {
                 <Table className="w-full">
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-14 text-center px-3 py-3">ترتیب</TableHead>
-                      <TableHead className="w-24 text-right px-3 py-3 border-r">رسانه</TableHead>
-                      <TableHead className="text-right px-3 py-3 border-r">عنوان</TableHead>
+                      <TableHead className="w-12 text-center px-3 py-3">ترتیب</TableHead>
+                      <TableHead className="w-20 text-center px-3 py-3 border-r">رسانه</TableHead>
+                      <TableHead className="min-w-48 text-right px-3 py-3 border-r">عنوان</TableHead>
                       <TableHead className="w-32 text-right px-3 py-3 border-r">دسته‌بندی</TableHead>
-                      <TableHead className="w-28 text-center px-3 py-3 border-r">آمار</TableHead>
-                      <TableHead className="w-20 text-center px-3 py-3 border-r">وضعیت</TableHead>
+                      <TableHead className="w-24 text-center px-3 py-3 border-r">آمار</TableHead>
+                      <TableHead className="w-16 text-center px-3 py-3 border-r">وضعیت</TableHead>
                       <TableHead className="w-24 text-center px-3 py-3 border-r">عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -521,7 +483,7 @@ export default function AdminPortfolio() {
                           در حال بارگذاری...
                         </TableCell>
                       </TableRow>
-                    ) : orderedItems.length === 0 ? (
+                    ) : filteredItems.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                           <div className="flex items-center justify-center gap-2">
@@ -534,137 +496,119 @@ export default function AdminPortfolio() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      <Reorder.Group
-                        as="tbody"
-                        axis="y"
-                        values={orderedItems}
-                        onReorder={handleReorder}
-                        className="[&>*]:cursor-grab [&>*:active]:cursor-grabbing"
-                      >
-                        {orderedItems.map((item) => (
-                          <Reorder.Item
-                            key={item.id}
-                            value={item}
-                            as="tr"
-                            className="border-b transition-colors hover:bg-muted/30"
-                            whileDrag={{
-                              scale: 1.01,
-                              boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-                              backgroundColor: "rgba(99, 102, 241, 0.05)",
-                            }}
-                          >
-                            {/* ترتیب */}
-                            <TableCell className="w-14 text-center px-3 py-3 align-middle">
-                              <GripVertical className="w-4 h-4 text-muted-foreground inline cursor-grab active:cursor-grabbing" />
-                            </TableCell>
+                      filteredItems.map((item) => (
+                        <TableRow key={item.id} className="border-b transition-colors hover:bg-muted/30">
+                          {/* ترتیب */}
+                          <TableCell className="w-12 text-center px-3 py-3 align-middle">
+                            <GripVertical className="w-4 h-4 text-muted-foreground inline cursor-grab" />
+                          </TableCell>
 
-                            {/* رسانه */}
-                            <TableCell className="w-24 px-3 py-3 align-middle border-r">
-                              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                                {item.image_url ? (
-                                  <div className="relative w-full h-full">
-                                    <img
-                                      src={item.image_url}
-                                      alt={item.title}
-                                      className="w-full h-full object-cover"
-                                    />
-                                    {item.video_url && (
-                                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                        <Video className="w-4 h-4 text-white" />
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center bg-muted">
-                                    {item.video_url ? (
-                                      <Video className="w-5 h-5 text-muted-foreground" />
-                                    ) : (
-                                      <Camera className="w-5 h-5 text-muted-foreground" />
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            </TableCell>
+                          {/* رسانه */}
+                          <TableCell className="w-20 px-3 py-3 align-middle border-r">
+                            <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted">
+                              {item.image_url ? (
+                                <div className="relative w-full h-full">
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  {item.video_url && (
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                      <Video className="w-4 h-4 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-muted">
+                                  {item.video_url ? (
+                                    <Video className="w-5 h-5 text-muted-foreground" />
+                                  ) : (
+                                    <Camera className="w-5 h-5 text-muted-foreground" />
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
 
-                            {/* عنوان و توضیح */}
-                            <TableCell className="px-3 py-3 text-right align-middle border-r">
-                              <div className="space-y-1">
-                                <p className="font-medium text-sm">{item.title}</p>
-                                {item.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-2 max-w-xs">
-                                    {item.description}
-                                  </p>
-                                )}
-                              </div>
-                            </TableCell>
+                          {/* عنوان و توضیح */}
+                          <TableCell className="min-w-48 px-3 py-3 text-right align-middle border-r">
+                            <div className="space-y-1">
+                              <p className="font-medium text-sm">{item.title}</p>
+                              {item.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {item.description}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
 
-                            {/* دسته‌بندی */}
-                            <TableCell className="w-32 px-3 py-3 text-right align-middle border-r">
-                              <Badge 
-                                variant="outline"
-                                className="inline-flex whitespace-nowrap text-xs"
-                                style={{ 
-                                  backgroundColor: `${getCategoryColor(item.category)}15`,
-                                  borderColor: getCategoryColor(item.category),
-                                  color: getCategoryColor(item.category),
+                          {/* دسته‌بندی */}
+                          <TableCell className="w-32 px-3 py-3 text-right align-middle border-r">
+                            <Badge 
+                              variant="outline"
+                              className="inline-flex whitespace-nowrap text-xs"
+                              style={{ 
+                                backgroundColor: `${getCategoryColor(item.category)}15`,
+                                borderColor: getCategoryColor(item.category),
+                                color: getCategoryColor(item.category),
+                              }}
+                            >
+                              {getCategoryLabel(item.category)}
+                            </Badge>
+                          </TableCell>
+
+                          {/* آمار */}
+                          <TableCell className="w-24 px-3 py-3 align-middle border-r">
+                            <div className="flex flex-col items-center gap-0.5 text-xs">
+                              <span className="flex items-center gap-1">
+                                <Eye className="w-3 h-3 text-muted-foreground" />
+                                <span className="font-medium">{item.views_count || 0}</span>
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Heart className="w-3 h-3 text-muted-foreground" />
+                                <span className="font-medium">{item.likes_count || 0}</span>
+                              </span>
+                            </div>
+                          </TableCell>
+
+                          {/* وضعیت */}
+                          <TableCell className="w-16 text-center px-3 py-3 align-middle border-r">
+                            <Switch
+                              checked={item.is_active}
+                              onCheckedChange={(checked) => {
+                                toggleActiveMutation.mutate({ id: item.id, is_active: checked });
+                              }}
+                            />
+                          </TableCell>
+
+                          {/* عملیات */}
+                          <TableCell className="w-24 px-3 py-3 align-middle border-r">
+                            <div className="flex items-center justify-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openDialog(item)}
+                                className="h-8 w-8 p-0 hover:bg-muted"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
+                                    deleteMutation.mutate(item.id);
+                                  }
                                 }}
                               >
-                                {getCategoryLabel(item.category)}
-                              </Badge>
-                            </TableCell>
-
-                            {/* آمار */}
-                            <TableCell className="w-28 px-3 py-3 align-middle border-r">
-                              <div className="flex flex-col items-center gap-1 text-xs">
-                                <span className="flex items-center gap-1">
-                                  <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-                                  <span className="font-medium">{item.views_count || 0}</span>
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Heart className="w-3.5 h-3.5 text-muted-foreground" />
-                                  <span className="font-medium">{item.likes_count || 0}</span>
-                                </span>
-                              </div>
-                            </TableCell>
-
-                            {/* وضعیت */}
-                            <TableCell className="w-20 text-center px-3 py-3 align-middle border-r">
-                              <Switch
-                                checked={item.is_active}
-                                onCheckedChange={(checked) => {
-                                  toggleActiveMutation.mutate({ id: item.id, is_active: checked });
-                                }}
-                              />
-                            </TableCell>
-
-                            {/* عملیات */}
-                            <TableCell className="w-24 px-3 py-3 align-middle border-r">
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openDialog(item)}
-                                  className="h-8 w-8 p-0 hover:bg-muted"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                  onClick={() => {
-                                    if (confirm("آیا از حذف این نمونه‌کار مطمئن هستید؟")) {
-                                      deleteMutation.mutate(item.id);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </Reorder.Item>
-                        ))}
-                      </Reorder.Group>
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
                     )}
                   </TableBody>
                 </Table>
@@ -680,19 +624,16 @@ export default function AdminPortfolio() {
                   <LayoutGrid className="w-5 h-5" />
                   جدول مرجع دسته‌بندی‌ها
                 </CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  این جدول نشان می‌دهد که هر لیبل مربوط به کدام دسته‌بندی است
-                </p>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/50">
-                        <TableHead className="px-4 py-3 text-right">نام دسته‌بندی</TableHead>
-                        <TableHead className="px-4 py-3 text-right border-r">شناسه (Slug)</TableHead>
+                        <TableHead className="px-4 py-3 text-right">نام</TableHead>
+                        <TableHead className="px-4 py-3 text-right border-r">Slug</TableHead>
                         <TableHead className="px-4 py-3 text-right border-r">رنگ</TableHead>
-                        <TableHead className="px-4 py-3 text-center border-r">تعداد نمونه‌کار</TableHead>
+                        <TableHead className="px-4 py-3 text-center border-r">متعلقه</TableHead>
                         <TableHead className="px-4 py-3 text-center border-r">وضعیت</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -701,9 +642,9 @@ export default function AdminPortfolio() {
                         <TableRow key={category.id} className="hover:bg-muted/50">
                           <TableCell className="px-4 py-3 text-right">
                             <div className="flex items-center gap-2 justify-end">
-                              <span className="font-medium">{category.name}</span>
+                              <span className="font-medium text-sm">{category.name}</span>
                               <div 
-                                className="w-4 h-4 rounded-full flex-shrink-0" 
+                                className="w-3 h-3 rounded-full" 
                                 style={{ backgroundColor: category.color }}
                               />
                             </div>
@@ -714,21 +655,18 @@ export default function AdminPortfolio() {
                             </code>
                           </TableCell>
                           <TableCell className="px-4 py-3 text-right border-r">
-                            <div className="flex items-center gap-2 justify-end">
-                              <code className="text-xs" dir="ltr">{category.color}</code>
-                              <div 
-                                className="w-6 h-6 rounded border flex-shrink-0" 
-                                style={{ backgroundColor: category.color }}
-                              />
-                            </div>
+                            <div 
+                              className="w-6 h-6 rounded border" 
+                              style={{ backgroundColor: category.color }}
+                            />
                           </TableCell>
                           <TableCell className="px-4 py-3 text-center border-r">
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="text-xs">
                               {portfolioItems?.filter(p => p.category === category.slug).length || 0}
                             </Badge>
                           </TableCell>
                           <TableCell className="px-4 py-3 text-center border-r">
-                            <Badge variant={category.is_active ? "default" : "secondary"}>
+                            <Badge variant={category.is_active ? "default" : "secondary"} className="text-xs">
                               {category.is_active ? "فعال" : "غیرفعال"}
                             </Badge>
                           </TableCell>
@@ -849,9 +787,6 @@ export default function AdminPortfolio() {
                 placeholder="https://example.com/video.mp4"
                 dir="ltr"
               />
-              <p className="text-xs text-muted-foreground">
-                لینک مستقیم ویدیو یا لینک یوتیوب/آپارات
-              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="title">عنوان</Label>
@@ -936,7 +871,7 @@ export default function AdminPortfolio() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cat_slug">شناسه (Slug)</Label>
+              <Label htmlFor="cat_slug">Slug</Label>
               <Input
                 id="cat_slug"
                 value={categoryFormData.slug}
@@ -944,9 +879,6 @@ export default function AdminPortfolio() {
                 placeholder="auto-generated"
                 dir="ltr"
               />
-              <p className="text-xs text-muted-foreground">
-                اگر خالی بگذارید، خودکار از نام ساخته می‌شود
-              </p>
             </div>
             <div className="space-y-2">
               <Label>رنگ</Label>
