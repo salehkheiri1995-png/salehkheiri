@@ -646,9 +646,9 @@ export default function AdminPortfolio() {
                             </div>
                           </TableCell>
 
-                          {/* وضعیت */}
+                          {/* وضعیت - اب Checkbox */}
                           <TableCell className="w-16 text-center px-3 py-3 align-middle border-r">
-                            <Switch
+                            <Checkbox
                               checked={item.is_active}
                               onCheckedChange={(checked) => {
                                 toggleActiveMutation.mutate({ id: item.id, is_active: checked });
@@ -906,7 +906,7 @@ export default function AdminPortfolio() {
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="is_active">فعال</Label>
-              <Switch
+              <Checkbox
                 id="is_active"
                 checked={formData.is_active}
                 onCheckedChange={(checked) =>
@@ -975,7 +975,7 @@ export default function AdminPortfolio() {
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="cat_active">فعال</Label>
-              <Switch
+              <Checkbox
                 id="cat_active"
                 checked={categoryFormData.is_active}
                 onCheckedChange={(checked) =>
