@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen, LayoutGrid, List, Eye } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Loader2, Clock, Users, BookOpen, LayoutGrid, List, Eye, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ interface Course {
   instructor_name: string | null;
   level: string | null;
   course_type: string | null;
-  students_count: number | null;
+  students_count: number;
   is_active: boolean;
   is_new: boolean | null;
   created_at: string;
@@ -31,6 +31,7 @@ interface Course {
 export default function AdminCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [levelFilter, setLevelFilter] = useState('all');
@@ -47,18 +48,75 @@ export default function AdminCourses() {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Fetch courses
+      const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setCourses(data || []);
+      if (coursesError) throw coursesError;
+      
+      // Fetch real enrollment counts
+      const { data: enrollmentCounts, error: enrollmentError } = await supabase
+        .from('course_enrollments')
+        .select('course_id');
+      
+      if (enrollmentError) throw enrollmentError;
+      
+      // Count enrollments per course
+      const countMap: Record<string, number> = {};
+      (enrollmentCounts || []).forEach(e => {
+        countMap[e.course_id] = (countMap[e.course_id] || 0) + 1;
+      });
+      
+      // Merge with courses
+      const coursesWithRealCount = (coursesData || []).map(course => ({
+        ...course,
+        students_count: countMap[course.id] || 0
+      }));
+      
+      setCourses(coursesWithRealCount);
     } catch (error) {
       console.error('خطا در دریافت دوره‌ها:', error);
       toast({ variant: "destructive", title: "خطا", description: "خطا در بارگذاری دوره‌ها" });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const syncStudentCounts = async () => {
+    try {
+      setSyncing(true);
+      
+      // Get real counts from enrollments
+      const { data: enrollmentCounts, error } = await supabase
+        .from('course_enrollments')
+        .select('course_id');
+      
+      if (error) throw error;
+      
+      // Count enrollments per course
+      const countMap: Record<string, number> = {};
+      (enrollmentCounts || []).forEach(e => {
+        countMap[e.course_id] = (countMap[e.course_id] || 0) + 1;
+      });
+      
+      // Update each course's students_count in database
+      for (const course of courses) {
+        const realCount = countMap[course.id] || 0;
+        await supabase
+          .from('courses')
+          .update({ students_count: realCount })
+          .eq('id', course.id);
+      }
+      
+      toast({ title: "موفق", description: "تعداد دانشجویان همگام‌سازی شد" });
+      fetchCourses();
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "خطا", description: error.message });
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -129,12 +187,18 @@ export default function AdminCourses() {
             {filteredCourses.length} دوره از {courses.length} نمایش داده می‌شود
           </p>
         </div>
-        <Button asChild>
-          <Link to="/admin/courses/new" className="gap-2">
-            <Plus className="w-4 h-4" />
-            افزودن دوره
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={syncStudentCounts} disabled={syncing} className="gap-2">
+            <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+            همگام‌سازی آمار
+          </Button>
+          <Button asChild>
+            <Link to="/admin/courses/new" className="gap-2">
+              <Plus className="w-4 h-4" />
+              افزودن دوره
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
