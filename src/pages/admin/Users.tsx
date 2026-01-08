@@ -13,10 +13,12 @@ import {
   Calendar,
   BookOpen,
   Eye,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -80,6 +82,14 @@ export default function AdminUsers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Delete options state
+  const [deleteOptions, setDeleteOptions] = useState({
+    orders: true,
+    bookings: true,
+    enrollments: true,
+    reviews: true,
+  });
 
   const [formData, setFormData] = useState({
     email: "",
@@ -211,6 +221,7 @@ export default function AdminUsers() {
         body: {
           action: "delete",
           user_id: selectedUser.id,
+          delete_options: deleteOptions,
         },
       });
 
@@ -219,6 +230,7 @@ export default function AdminUsers() {
       toast.success("کاربر با موفقیت حذف شد");
       setDeleteDialogOpen(false);
       setSelectedUser(null);
+      setDeleteOptions({ orders: true, bookings: true, enrollments: true, reviews: true });
       fetchUsers();
     } catch (error: any) {
       toast.error(error.message || "خطا در حذف کاربر");
@@ -569,13 +581,70 @@ export default function AdminUsers() {
 
       {/* Delete Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
-            <AlertDialogTitle>حذف کاربر</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              حذف کاربر
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              آیا مطمئن هستید که می‌خواهید کاربر «{selectedUser?.full_name || "بدون نام"}» را حذف کنید؟
+              کاربر «{selectedUser?.full_name || "بدون نام"}» حذف خواهد شد. کدام اطلاعات حذف شوند؟
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          <div className="space-y-3 py-4">
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Checkbox 
+                id="delete-orders" 
+                checked={deleteOptions.orders}
+                onCheckedChange={(checked) => setDeleteOptions({...deleteOptions, orders: !!checked})}
+              />
+              <label htmlFor="delete-orders" className="text-sm flex items-center gap-2 cursor-pointer">
+                <ShoppingCart className="w-4 h-4" />
+                سفارشات ({selectedUser?.orders_count || 0})
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Checkbox 
+                id="delete-bookings" 
+                checked={deleteOptions.bookings}
+                onCheckedChange={(checked) => setDeleteOptions({...deleteOptions, bookings: !!checked})}
+              />
+              <label htmlFor="delete-bookings" className="text-sm flex items-center gap-2 cursor-pointer">
+                <Calendar className="w-4 h-4" />
+                رزروها ({selectedUser?.bookings_count || 0})
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Checkbox 
+                id="delete-enrollments" 
+                checked={deleteOptions.enrollments}
+                onCheckedChange={(checked) => setDeleteOptions({...deleteOptions, enrollments: !!checked})}
+              />
+              <label htmlFor="delete-enrollments" className="text-sm flex items-center gap-2 cursor-pointer">
+                <BookOpen className="w-4 h-4" />
+                ثبت‌نام دوره‌ها ({selectedUser?.enrollments_count || 0})
+              </label>
+            </div>
+            
+            <div className="flex items-center space-x-2 space-x-reverse">
+              <Checkbox 
+                id="delete-reviews" 
+                checked={deleteOptions.reviews}
+                onCheckedChange={(checked) => setDeleteOptions({...deleteOptions, reviews: !!checked})}
+              />
+              <label htmlFor="delete-reviews" className="text-sm flex items-center gap-2 cursor-pointer">
+                ⭐ نظرات
+              </label>
+            </div>
+          </div>
+          
+          <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground">
+            💡 موارد تیک‌نخورده حفظ می‌شوند ولی ارتباط با کاربر قطع می‌شود
+          </div>
+
           <AlertDialogFooter className="gap-2">
             <AlertDialogCancel>انصراف</AlertDialogCancel>
             <AlertDialogAction
