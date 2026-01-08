@@ -9,6 +9,8 @@ import { useSalonSettings } from "@/hooks/useSalonSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { EditableText } from "@/components/visual-editor/EditableText";
+import { EditableSection } from "@/components/visual-editor/EditableSection";
 
 export function ProductsSection() {
   const { addItem, items } = useCart();
@@ -43,22 +45,12 @@ export function ProductsSection() {
 
   const isInCart = (id: string) => items.some((item) => item.id === id);
 
-  const parseTitle = (title: string) => {
-    const match = title.match(/^(.+?)\s+(\S+)$/);
-    if (match) {
-      return { main: match[1], highlight: match[2] };
-    }
-    return { main: title, highlight: "" };
-  };
-
-  const titleParts = parseTitle(settings?.home_products_title || "محصولات پرفروش");
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fa-IR").format(price);
   };
 
   return (
-    <section className="py-24">
+    <EditableSection pageKey="home" contentKey="products_section" className="py-24">
       <div className="container">
         {/* Header */}
         <motion.div
@@ -68,13 +60,28 @@ export function ProductsSection() {
           className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12"
         >
           <div>
-            <span className="text-primary font-medium mb-4 block">فروشگاه</span>
+            <EditableText
+              pageKey="home"
+              contentKey="products_label"
+              defaultValue="فروشگاه"
+              as="span"
+              className="text-primary font-medium mb-4 block"
+            />
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              {titleParts.main} <span className="gradient-text">{titleParts.highlight}</span>
+              <EditableText
+                pageKey="home"
+                contentKey="products_title"
+                defaultValue={settings?.home_products_title || "محصولات پرفروش"}
+                as="span"
+              />
             </h2>
-            <p className="text-muted-foreground max-w-2xl">
-              {settings?.home_products_subtitle || "بهترین محصولات زیبایی با ضمانت اصالت کالا"}
-            </p>
+            <EditableText
+              pageKey="home"
+              contentKey="products_subtitle"
+              defaultValue={settings?.home_products_subtitle || "بهترین محصولات زیبایی با ضمانت اصالت کالا"}
+              as="p"
+              className="text-muted-foreground max-w-2xl"
+            />
           </div>
           <Button asChild variant="outline" className="gap-2 shrink-0">
             <Link to="/shop">
@@ -179,6 +186,6 @@ export function ProductsSection() {
           </div>
         )}
       </div>
-    </section>
+    </EditableSection>
   );
 }
