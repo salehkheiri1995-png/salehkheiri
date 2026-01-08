@@ -501,17 +501,17 @@ export default function AdminPortfolio() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="overflow-x-auto" dir="rtl">
+                <Table className="w-full">
                   <TableHeader>
                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                      <TableHead className="w-12 text-center px-4 py-3">ترتیب</TableHead>
-                      <TableHead className="w-28 text-right px-4 py-3">رسانه</TableHead>
-                      <TableHead className="px-4 py-3 text-right min-w-[280px]">عنوان</TableHead>
-                      <TableHead className="px-4 py-3 text-right min-w-[140px]">دسته‌بندی</TableHead>
-                      <TableHead className="w-24 text-center px-4 py-3">آمار</TableHead>
-                      <TableHead className="w-20 text-center px-4 py-3">وضعیت</TableHead>
-                      <TableHead className="w-20 text-center px-4 py-3">عملیات</TableHead>
+                      <TableHead className="w-14 text-center px-3 py-3">ترتیب</TableHead>
+                      <TableHead className="w-24 text-right px-3 py-3">رسانه</TableHead>
+                      <TableHead className="text-right px-3 py-3">عنوان</TableHead>
+                      <TableHead className="w-32 text-right px-3 py-3">دسته‌بندی</TableHead>
+                      <TableHead className="w-28 text-center px-3 py-3">آمار</TableHead>
+                      <TableHead className="w-20 text-center px-3 py-3">وضعیت</TableHead>
+                      <TableHead className="w-24 text-center px-3 py-3">عملیات</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -554,13 +554,13 @@ export default function AdminPortfolio() {
                             }}
                           >
                             {/* ترتیب */}
-                            <TableCell className="text-center w-12 px-4 py-3">
+                            <TableCell className="w-14 text-center px-3 py-3 align-middle">
                               <GripVertical className="w-4 h-4 text-muted-foreground inline cursor-grab active:cursor-grabbing" />
                             </TableCell>
 
                             {/* رسانه */}
-                            <TableCell className="w-28 px-4 py-3">
-                              <div className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                            <TableCell className="w-24 px-3 py-3 align-middle">
+                              <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                 {item.image_url ? (
                                   <div className="relative w-full h-full">
                                     <img
@@ -570,16 +570,16 @@ export default function AdminPortfolio() {
                                     />
                                     {item.video_url && (
                                       <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                        <Video className="w-5 h-5 text-white" />
+                                        <Video className="w-4 h-4 text-white" />
                                       </div>
                                     )}
                                   </div>
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center bg-muted">
                                     {item.video_url ? (
-                                      <Video className="w-6 h-6 text-muted-foreground" />
+                                      <Video className="w-5 h-5 text-muted-foreground" />
                                     ) : (
-                                      <Camera className="w-6 h-6 text-muted-foreground" />
+                                      <Camera className="w-5 h-5 text-muted-foreground" />
                                     )}
                                   </div>
                                 )}
@@ -587,11 +587,11 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* عنوان و توضیح */}
-                            <TableCell className="px-4 py-3 text-right">
+                            <TableCell className="px-3 py-3 text-right align-middle">
                               <div className="space-y-1">
                                 <p className="font-medium text-sm">{item.title}</p>
                                 {item.description && (
-                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                  <p className="text-xs text-muted-foreground line-clamp-2 max-w-xs">
                                     {item.description}
                                   </p>
                                 )}
@@ -599,11 +599,10 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* دسته‌بندی */}
-                            <TableCell className="px-4 py-3 text-right">
+                            <TableCell className="w-32 px-3 py-3 text-right align-middle">
                               <Badge 
                                 variant="outline"
-                                className="inline-flex whitespace-nowrap"
-                                dir="rtl"
+                                className="inline-flex whitespace-nowrap text-xs"
                                 style={{ 
                                   backgroundColor: `${getCategoryColor(item.category)}15`,
                                   borderColor: getCategoryColor(item.category),
@@ -615,21 +614,21 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* آمار */}
-                            <TableCell className="w-24 px-4 py-3">
-                              <div className="flex items-center justify-center gap-4 text-sm">
-                                <span className="flex items-center gap-1 whitespace-nowrap">
-                                  <Eye className="w-4 h-4" />
-                                  <span className="text-xs font-medium">{item.views_count || 0}</span>
+                            <TableCell className="w-28 px-3 py-3 align-middle">
+                              <div className="flex flex-col items-center gap-1 text-xs">
+                                <span className="flex items-center gap-1">
+                                  <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span className="font-medium">{item.views_count || 0}</span>
                                 </span>
-                                <span className="flex items-center gap-1 whitespace-nowrap">
-                                  <Heart className="w-4 h-4" />
-                                  <span className="text-xs font-medium">{item.likes_count || 0}</span>
+                                <span className="flex items-center gap-1">
+                                  <Heart className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span className="font-medium">{item.likes_count || 0}</span>
                                 </span>
                               </div>
                             </TableCell>
 
                             {/* وضعیت */}
-                            <TableCell className="w-20 text-center px-4 py-3">
+                            <TableCell className="w-20 text-center px-3 py-3 align-middle">
                               <Switch
                                 checked={item.is_active}
                                 onCheckedChange={(checked) => {
@@ -639,8 +638,8 @@ export default function AdminPortfolio() {
                             </TableCell>
 
                             {/* عملیات */}
-                            <TableCell className="w-20 px-4 py-3">
-                              <div className="flex items-center justify-center gap-2">
+                            <TableCell className="w-24 px-3 py-3 align-middle">
+                              <div className="flex items-center justify-center gap-1">
                                 <Button
                                   variant="ghost"
                                   size="sm"
