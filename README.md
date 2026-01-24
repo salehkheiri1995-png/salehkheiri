@@ -1,73 +1,337 @@
-# Welcome to your Lovable project
+# 💆‍♀️ Salehkheiri - Beauty Salon Management Platform
 
-## Project info
+> یک پلتفرم کامل مدیریت سالن زیبایی با React, Vite, TypeScript و Prisma ORM
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://react.dev/)
+[![Vite](https://img.shields.io/badge/Vite-5.4-646cff.svg)](https://vitejs.dev/)
+[![Express](https://img.shields.io/badge/Express-4.18-green.svg)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14+-336791.svg)](https://www.postgresql.org/)
 
-## How can I edit this code?
+## 📋 ویژگی‌ها
 
-There are several ways of editing your application.
+### 👥 مدیریت کاربران
+- ثبت‌نام و ورود
+- پروفایل کاربر
+- مدیریت رول‌ها
 
-**Use Lovable**
+### 📚 دوره‌های آموزشی
+- ایجاد و مدیریت دوره‌ها
+- اضافه کردن درس‌های ویدیویی
+- ثبت‌نام کاربران در دوره‌ها
+- سیستم نظرات و رتبه‌دهی
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 💅 خدمات سالن
+- مدیریت خدمات
+- رزرو آنلاین
+- مدیریت متخصصین
+- تقویم رزوها
 
-Changes made via Lovable will be committed automatically to this repo.
+### 🛍️ فروشگاه اینترنتی
+- مدیریت محصولات
+- سبد خرید
+- سفارش‌گذاری
+- مدیریت موجودی
 
-**Use your preferred IDE**
+### ⭐ نظرات و رتبه‌دهی
+- سیستم نظرات برای دوره‌ها و محصولات
+- رتبه‌دهی ستاره‌ای
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 شروع سریع
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### پیش‌نیازها
 
-Follow these steps:
+- Node.js 18+
+- PostgreSQL 14+
+- npm یا yarn
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### ۱. نصب PostgreSQL
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+#### Windows
+```bash
+# دانلود از:
+https://www.postgresql.org/download/windows/
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+# یا استفاده از Chocolatey:
+choco install postgresql
 ```
 
-**Edit a file directly in GitHub**
+#### macOS
+```bash
+brew install postgresql@15
+brew services start postgresql@15
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+#### Linux (Ubuntu/Debian)
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo systemctl start postgresql
+```
 
-**Use GitHub Codespaces**
+### ۲. ایجاد Database
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+psql -U postgres
 
-## What technologies are used for this project?
+CREATE DATABASE salehkheiri;
+CREATE USER saleh WITH ENCRYPTED PASSWORD '1374';
+GRANT ALL PRIVILEGES ON DATABASE salehkheiri TO saleh;
+\q
+```
 
-This project is built with:
+### ۳. کلون کردن پروژه
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+git clone https://github.com/saleh1374/salehkheiri.git
+cd salehkheiri
+```
 
-## How can I deploy this project?
+### ۴. نصب وابستگی‌ها
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+```bash
+npm install
+```
 
-## Can I connect a custom domain to my Lovable project?
+### ۵. تنظیم متغیرهای محیطی
 
-Yes, you can!
+```bash
+# فایل .env را کپی کن
+cp .env.example .env
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# اگر .env وجود ندارد، بساز:
+echo 'DATABASE_URL="postgresql://saleh:1374@localhost:5432/salehkheiri"
+NODE_ENV=development
+PORT=3000
+VITE_API_URL=http://localhost:3000/api
+JWT_SECRET=your_secret_key_here' > .env
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### ۶. اجرای Migration
+
+```bash
+npx prisma migrate dev
+# یا
+npm run db:migrate
+```
+
+### ۷. شروع اجرا
+
+```bash
+# Backend و Frontend با هم
+npm run dev
+
+# یا جداگانه:
+npm run dev:backend  # Backend: http://localhost:3000
+npm run dev:frontend # Frontend: http://localhost:5173
+```
+
+## 📊 URLs
+
+| سرویس | URL |
+|-------|-----|
+| Frontend (React) | http://localhost:5173 |
+| Backend (API) | http://localhost:3000/api |
+| Health Check | http://localhost:3000/api/health |
+| Prisma Studio | npm run db:studio |
+| pgAdmin | localhost:5050 |
+
+## 📚 API Endpoints
+
+### Users
+```bash
+GET    /api/users              # همه کاربران
+GET    /api/users/:id          # یک کاربر
+POST   /api/users              # ایجاد کاربر
+PUT    /api/users/:id          # ویرایش
+DELETE /api/users/:id          # حذف
+```
+
+### Courses
+```bash
+GET    /api/courses            # همه دوره‌ها
+GET    /api/courses/:id        # یک دوره
+POST   /api/courses            # ایجاد
+PUT    /api/courses/:id        # ویرایش
+DELETE /api/courses/:id        # حذف
+```
+
+### Products
+```bash
+GET    /api/products           # همه محصولات
+GET    /api/products/:id       # یک محصول
+POST   /api/products           # ایجاد
+PUT    /api/products/:id       # ویرایش
+DELETE /api/products/:id       # حذف
+```
+
+### Services
+```bash
+GET    /api/services           # همه خدمات
+POST   /api/services           # ایجاد
+```
+
+### Bookings
+```bash
+GET    /api/bookings           # همه رزوها
+GET    /api/bookings/user/:id  # رزوهای کاربر
+POST   /api/bookings           # ایجاد رزو
+PUT    /api/bookings/:id       # ویرایش رزو
+```
+
+### Cart & Orders
+```bash
+GET    /api/cart/:userId       # سبد خرید
+POST   /api/cart               # اضافه به سبد
+DELETE /api/cart/:id           # حذف از سبد
+
+GET    /api/orders             # تمام سفارشات
+GET    /api/orders/user/:id    # سفارشات کاربر
+POST   /api/orders             # ایجاد سفارش
+```
+
+## 🎓 دستورات مفید
+
+```bash
+# Backend + Frontend
+npm run dev
+
+# فقط Backend
+npm run dev:backend
+
+# فقط Frontend
+npm run dev:frontend
+
+# Prisma Studio (مدیریت Database)
+npm run db:studio
+
+# Migration جدید
+npm run db:migrate
+
+# Push schema بدون Migration
+npm run db:push
+
+# Reset Database
+npm run db:reset
+
+# Build
+npm run build
+
+# Lint
+npm run lint
+```
+
+## 🗄️ ساختار Database
+
+### جداول اصلی:
+
+| جدول | توضیح |
+|------|-------|
+| `User` | کاربران سیستم |
+| `Course` | دوره‌های آموزشی |
+| `CourseLessonItem` | درس‌های دوره |
+| `CourseEnrollment` | ثبت‌نام‌های دوره |
+| `Service` | خدمات سالن |
+| `Specialist` | متخصصین |
+| `Product` | محصولات فروشگاه |
+| `Booking` | رزروی خدمات |
+| `CartItem` | اقلام سبد خرید |
+| `Order` | سفارشات |
+| `OrderItem` | اقلام سفارش |
+| `Review` | نظرات کاربران |
+
+## 🔒 امنیت
+
+⚠️ **توجه**: این پروژه برای توسعه محلی است. برای Production:
+
+- [ ] رمز عبور قوی ایجاد کنید
+- [ ] `.env` را بدون `git` نگاه دارید
+- [ ] JWT_SECRET طولانی ایجاد کنید
+- [ ] HTTPS استفاده کنید
+- [ ] Password Hashing فعال کنید (bcrypt)
+- [ ] Rate Limiting اضافه کنید
+- [ ] Input Validation فعال کنید
+
+## 📝 مثال‌های API
+
+### ایجاد دوره
+
+```bash
+curl -X POST http://localhost:3000/api/courses \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "دوره React",
+    "description": "یاد بگیر React از صفر",
+    "instructor_name": "صالح خیری",
+    "price": 500000,
+    "duration_hours": 20,
+    "level": "مبتدی"
+  }'
+```
+
+### ایجاد محصول
+
+```bash
+curl -X POST http://localhost:3000/api/products \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "شامپو",
+    "description": "شامپو باکیفیت",
+    "price": 50000,
+    "category": "Hair Care",
+    "stock": 100
+  }'
+```
+
+### ایجاد رزو
+
+```bash
+curl -X POST http://localhost:3000/api/bookings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_id": "user-uuid",
+    "service_id": "service-uuid",
+    "date": "2026-02-15",
+    "time": "14:30"
+  }'
+```
+
+## 🐛 مشکلات رایج
+
+### "Connection refused"
+```bash
+# PostgreSQL را start کنید
+sudo systemctl start postgresql  # Linux
+brew services start postgresql@15 # macOS
+# یا Windows Services > PostgreSQL > Start
+```
+
+### "Migration failed"
+```bash
+npm run db:reset
+```
+
+### "Port already in use"
+```bash
+npm run dev:backend -- --port 3001
+```
+
+## 📚 منابع
+
+- [Prisma Documentation](https://www.prisma.io/docs/)
+- [Express.js Guide](https://expressjs.com/)
+- [React Documentation](https://react.dev/)
+- [PostgreSQL Docs](https://www.postgresql.org/docs/)
+- [Vite Guide](https://vitejs.dev/)
+
+## 📧 تماس
+
+سوالی دارید؟ Issues یا Pull Requests خوشِ آمدید!
+
+## 📄 لایسنس
+
+MIT License - برای جزئیات بیشتر `LICENSE` را مطالعه کنید.
+
+---
+
+**ساخته شده با ❤️ برای سالن‌های زیبایی**
