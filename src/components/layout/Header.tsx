@@ -76,7 +76,7 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
             <NotificationBell />
-            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative" aria-label="سبد خرید">
               <Link to="/cart">
                 <ShoppingBag className="w-5 h-5" />
                 {totalItems > 0 && (
@@ -90,6 +90,7 @@ export function Header() {
               <div className="relative">
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  aria-label="منوی کاربر"
                   className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground flex items-center gap-2"
                 >
                   <User className="w-5 h-5" />
@@ -155,6 +156,7 @@ export function Header() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "بستن منو" : "باز کردن منو"}
             className="lg:hidden p-2 text-foreground"
           >
             {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}

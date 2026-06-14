@@ -341,6 +341,7 @@ export default function Portfolio() {
             <div className="relative">
               <button
                 onClick={() => setSelectedItem(null)}
+                aria-label="بستن"
                 className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
               >
                 <X className="w-5 h-5" />
@@ -348,12 +349,14 @@ export default function Portfolio() {
 
               <button
                 onClick={() => navigateItem('prev')}
+                aria-label="نمونه‌کار قبلی"
                 className="absolute left-4 top-1/3 z-20 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={() => navigateItem('next')}
+                aria-label="نمونه‌کار بعدی"
                 className="absolute right-4 top-1/3 z-20 w-10 h-10 rounded-full bg-black/50 flex items-center justify-center text-white hover:bg-black/70 transition-colors"
               >
                 <ChevronRight className="w-5 h-5" />
