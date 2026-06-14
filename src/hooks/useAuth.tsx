@@ -2,6 +2,15 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+interface BackendUser {
+  id: string;
+  email: string;
+  name?: string | null;
+  phone?: string | null;
+  avatar?: string | null;
+  created_at?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -10,6 +19,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  backendUser: BackendUser | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,27 +29,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [backendUser, setBackendUser] = useState<BackendUser | null>(null);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Defer role check
         if (session?.user) {
-          setTimeout(() => {
-            checkAdminRole(session.user.id);
-          }, 0);
+          checkAdminRole(session.user.id);
         } else {
           setIsAdmin(false);
         }
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -69,28 +75,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // New: use backend login instead of Supabase email confirmation rules
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        return { error: new Error(data.error || "Login failed") };
+      }
+
+      // Save JWT token for protected backend routes
+      localStorage.setItem("auth_token", data.token);
+      setBackendUser(data.user as BackendUser);
+
+      return { error: null };
+    } catch (err: any) {
+      return { error: err };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
+    try {
+      // 1) Create user in backend (used by your Express API)
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name: fullName }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        return { error: new Error(data.error || "Signup failed") };
+      }
+
+      // 2) Optionally also create Supabase user (to keep existing DB structure working)
+      const redirectUrl = `${window.location.origin}/`;
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+          },
         },
-      },
-    });
-    return { error };
+      });
+
+      return { error: error ?? null };
+    } catch (err: any) {
+      return { error: err };
+    }
   };
 
   const signOut = async () => {
@@ -98,10 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setIsAdmin(false);
+    setBackendUser(null);
+    localStorage.removeItem("auth_token");
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signIn, signUp, signOut }}>
+    <AuthContext.Provider
+      value={{ user, session, loading, isAdmin, signIn, signUp, signOut, backendUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
