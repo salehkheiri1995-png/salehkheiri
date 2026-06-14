@@ -76,7 +76,7 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
             <NotificationBell />
-            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative">
+            <Button asChild variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground relative" aria-label="سبد خرید">
               <Link to="/cart">
                 <ShoppingBag className="w-5 h-5" />
                 {totalItems > 0 && (
