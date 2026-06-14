@@ -3,7 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { loginRouter } from "./middleware/auth";
+import { z } from "zod";
+import { loginRouter, authMiddleware } from "./middleware/auth";
 
 // Load environment variables
 dotenv.config();
@@ -11,6 +12,101 @@ dotenv.config();
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
+
+// ==================== ZOD SCHEMAS ====================
+
+const userCreateSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).optional(),
+  password: z.string().min(6),
+  phone: z.string().min(5).optional(),
+});
+
+const userUpdateSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    phone: z.string().min(5).optional(),
+    avatar: z.string().url().optional(),
+    password: z.string().min(6).optional(),
+  })
+  .strict();
+
+const courseCreateSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1),
+  instructor_name: z.string().min(1),
+  price: z.union([z.number(), z.string()]),
+  duration_hours: z.union([z.number(), z.string()]).optional(),
+  level: z.string().optional(),
+  image_url: z.string().url().optional(),
+});
+
+const courseUpdateSchema = courseCreateSchema.partial();
+
+const productCreateSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  price: z.union([z.number(), z.string()]),
+  category: z.string().min(1),
+  stock: z.union([z.number(), z.string()]).optional(),
+  image_url: z.string().url().optional(),
+});
+
+const productUpdateSchema = productCreateSchema.partial();
+
+const serviceCreateSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  price: z.union([z.number(), z.string()]),
+  duration: z.union([z.number(), z.string()]),
+  icon_url: z.string().url().optional(),
+});
+
+const enrollmentCreateSchema = z.object({
+  user_id: z.string().min(1),
+  course_id: z.string().min(1),
+  email: z.string().email(),
+  student_name: z.string().optional(),
+  phone: z.string().optional(),
+});
+
+const bookingCreateSchema = z.object({
+  user_id: z.string().min(1),
+  service_id: z.string().min(1),
+  date: z.string().min(1),
+  time: z.string().min(1),
+  notes: z.string().optional(),
+});
+
+const bookingUpdateSchema = z
+  .object({
+    date: z.string().optional(),
+    time: z.string().optional(),
+    notes: z.string().optional(),
+  })
+  .partial();
+
+const orderItemSchema = z.object({
+  product_id: z.string().min(1),
+  quantity: z.number().int().positive(),
+  price: z.number().positive(),
+});
+
+const orderCreateSchema = z.object({
+  user_id: z.string().min(1),
+  total_price: z.union([z.number(), z.string()]),
+  payment_method: z.string().optional(),
+  shipping_address: z.string().optional(),
+  items: z.array(orderItemSchema).min(1),
+});
+
+const reviewCreateSchema = z.object({
+  user_id: z.string().min(1),
+  course_id: z.string().optional(),
+  product_id: z.string().optional(),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().min(1),
+});
 
 // ==================== MIDDLEWARE ====================
 app.use(
@@ -36,8 +132,8 @@ app.get("/api/health", (req: Request, res: Response) => {
 
 // ==================== USERS ====================
 
-// GET all users
-app.get("/api/users", async (req: Request, res: Response) => {
+// GET all users (protected)
+app.get("/api/users", authMiddleware, async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -56,40 +152,45 @@ app.get("/api/users", async (req: Request, res: Response) => {
   }
 });
 
-// GET single user
-app.get("/api/users/:id", async (req: Request, res: Response) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.params.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        phone: true,
-        avatar: true,
-        created_at: true,
-        enrollments: true,
-        reviews: true,
-        bookings: true,
-      },
-    });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
+// GET single user (protected)
+app.get(
+  "/api/users/:id",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: req.params.id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          phone: true,
+          avatar: true,
+          created_at: true,
+          enrollments: true,
+          reviews: true,
+          bookings: true,
+        },
+      });
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user" });
     }
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch user" });
   }
-});
+);
 
-// CREATE user
+// CREATE user (public - signup)
 app.post("/api/users", async (req: Request, res: Response) => {
   try {
-    const { email, name, password, phone } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password required" });
+    const parsed = userCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid user data", details: parsed.error.flatten() });
     }
+
+    const { email, name, password, phone } = parsed.data;
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -119,10 +220,17 @@ app.post("/api/users", async (req: Request, res: Response) => {
   }
 });
 
-// UPDATE user
-app.put("/api/users/:id", async (req: Request, res: Response) => {
+// UPDATE user (protected)
+app.put("/api/users/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { name, phone, avatar, password } = req.body;
+    const parsed = userUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid user update data", details: parsed.error.flatten() });
+    }
+
+    const { name, phone, avatar, password } = parsed.data;
 
     const data: any = { name, phone, avatar };
 
@@ -148,8 +256,8 @@ app.put("/api/users/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE user
-app.delete("/api/users/:id", async (req: Request, res: Response) => {
+// DELETE user (protected)
+app.delete("/api/users/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.delete({
       where: { id: req.params.id },
@@ -170,7 +278,7 @@ app.delete("/api/users/:id", async (req: Request, res: Response) => {
 
 // ==================== COURSES ====================
 
-// GET all courses
+// GET all courses (public)
 app.get("/api/courses", async (req: Request, res: Response) => {
   try {
     const courses = await prisma.course.findMany({
@@ -188,7 +296,7 @@ app.get("/api/courses", async (req: Request, res: Response) => {
   }
 });
 
-// GET single course
+// GET single course (public)
 app.get("/api/courses/:id", async (req: Request, res: Response) => {
   try {
     const course = await prisma.course.findUnique({
@@ -208,9 +316,16 @@ app.get("/api/courses/:id", async (req: Request, res: Response) => {
   }
 });
 
-// CREATE course
-app.post("/api/courses", async (req: Request, res: Response) => {
+// CREATE course (protected)
+app.post("/api/courses", authMiddleware, async (req: Request, res: Response) => {
   try {
+    const parsed = courseCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid course data", details: parsed.error.flatten() });
+    }
+
     const {
       title,
       description,
@@ -219,19 +334,18 @@ app.post("/api/courses", async (req: Request, res: Response) => {
       duration_hours,
       level,
       image_url,
-    } = req.body;
-
-    if (!title || !description || !instructor_name || !price) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+    } = parsed.data;
 
     const course = await prisma.course.create({
       data: {
         title,
         description,
         instructor_name,
-        price: parseFloat(price),
-        duration_hours: parseInt(duration_hours) || 0,
+        price: typeof price === "string" ? parseFloat(price) : price,
+        duration_hours:
+          typeof duration_hours === "string"
+            ? parseInt(duration_hours)
+            : duration_hours || 0,
         level: level || "مبتدی",
         image_url,
       },
@@ -243,12 +357,28 @@ app.post("/api/courses", async (req: Request, res: Response) => {
   }
 });
 
-// UPDATE course
-app.put("/api/courses/:id", async (req: Request, res: Response) => {
+// UPDATE course (protected)
+app.put("/api/courses/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
+    const parsed = courseUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid course update data", details: parsed.error.flatten() });
+    }
+
+    const data: any = { ...parsed.data };
+
+    if (data.price && typeof data.price === "string") {
+      data.price = parseFloat(data.price);
+    }
+    if (data.duration_hours && typeof data.duration_hours === "string") {
+      data.duration_hours = parseInt(data.duration_hours);
+    }
+
     const course = await prisma.course.update({
       where: { id: req.params.id },
-      data: req.body,
+      data,
     });
     res.json(course);
   } catch (error) {
@@ -256,8 +386,8 @@ app.put("/api/courses/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE course
-app.delete("/api/courses/:id", async (req: Request, res: Response) => {
+// DELETE course (protected)
+app.delete("/api/courses/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const course = await prisma.course.delete({
       where: { id: req.params.id },
@@ -270,7 +400,7 @@ app.delete("/api/courses/:id", async (req: Request, res: Response) => {
 
 // ==================== COURSE LESSONS ====================
 
-// GET lessons for a course
+// GET lessons for a course (public)
 app.get("/api/courses/:courseId/lessons", async (req: Request, res: Response) => {
   try {
     const lessons = await prisma.courseLessonItem.findMany({
@@ -283,11 +413,10 @@ app.get("/api/courses/:courseId/lessons", async (req: Request, res: Response) =>
   }
 });
 
-// CREATE lesson
-app.post("/api/lessons", async (req: Request, res: Response) => {
+// CREATE lesson (protected)
+app.post("/api/lessons", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { course_id, title, description, video_url, duration_minutes } =
-      req.body;
+    const { course_id, title, description, video_url, duration_minutes } = req.body;
 
     if (!course_id || !title) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -312,8 +441,8 @@ app.post("/api/lessons", async (req: Request, res: Response) => {
 
 // ==================== COURSE ENROLLMENTS ====================
 
-// GET enrollments
-app.get("/api/enrollments", async (req: Request, res: Response) => {
+// GET enrollments (protected)
+app.get("/api/enrollments", authMiddleware, async (req: Request, res: Response) => {
   try {
     const enrollments = await prisma.courseEnrollment.findMany({
       include: { user: true, course: true },
@@ -324,23 +453,18 @@ app.get("/api/enrollments", async (req: Request, res: Response) => {
   }
 });
 
-// CREATE enrollment
-app.post("/api/enrollments", async (req: Request, res: Response) => {
+// CREATE enrollment (protected)
+app.post("/api/enrollments", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { user_id, course_id, email, student_name, phone } = req.body;
-
-    if (!user_id || !course_id || !email) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const parsed = enrollmentCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid enrollment data", details: parsed.error.flatten() });
     }
 
     const enrollment = await prisma.courseEnrollment.create({
-      data: {
-        user_id,
-        course_id,
-        email,
-        student_name,
-        phone,
-      },
+      data: parsed.data,
     });
     res.json(enrollment);
   } catch (error: any) {
@@ -356,7 +480,7 @@ app.post("/api/enrollments", async (req: Request, res: Response) => {
 
 // ==================== PRODUCTS ====================
 
-// GET all products
+// GET all products (public)
 app.get("/api/products", async (req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
@@ -369,7 +493,7 @@ app.get("/api/products", async (req: Request, res: Response) => {
   }
 });
 
-// GET single product
+// GET single product (public)
 app.get("/api/products/:id", async (req: Request, res: Response) => {
   try {
     const product = await prisma.product.findUnique({
@@ -385,22 +509,25 @@ app.get("/api/products/:id", async (req: Request, res: Response) => {
   }
 });
 
-// CREATE product
-app.post("/api/products", async (req: Request, res: Response) => {
+// CREATE product (protected)
+app.post("/api/products", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { title, description, price, category, stock, image_url } = req.body;
-
-    if (!title || !price || !category) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const parsed = productCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid product data", details: parsed.error.flatten() });
     }
+
+    const { title, description, price, category, stock, image_url } = parsed.data;
 
     const product = await prisma.product.create({
       data: {
         title,
         description,
-        price: parseFloat(price),
+        price: typeof price === "string" ? parseFloat(price) : price,
         category,
-        stock: parseInt(stock) || 0,
+        stock: typeof stock === "string" ? parseInt(stock) : stock || 0,
         image_url,
       },
     });
@@ -411,12 +538,27 @@ app.post("/api/products", async (req: Request, res: Response) => {
   }
 });
 
-// UPDATE product
-app.put("/api/products/:id", async (req: Request, res: Response) => {
+// UPDATE product (protected)
+app.put("/api/products/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
+    const parsed = productUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid product update data", details: parsed.error.flatten() });
+    }
+
+    const data: any = { ...parsed.data };
+    if (data.price && typeof data.price === "string") {
+      data.price = parseFloat(data.price);
+    }
+    if (data.stock && typeof data.stock === "string") {
+      data.stock = parseInt(data.stock);
+    }
+
     const product = await prisma.product.update({
       where: { id: req.params.id },
-      data: req.body,
+      data,
     });
     res.json(product);
   } catch (error) {
@@ -424,8 +566,8 @@ app.put("/api/products/:id", async (req: Request, res: Response) => {
   }
 });
 
-// DELETE product
-app.delete("/api/products/:id", async (req: Request, res: Response) => {
+// DELETE product (protected)
+app.delete("/api/products/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const product = await prisma.product.delete({
       where: { id: req.params.id },
@@ -438,7 +580,7 @@ app.delete("/api/products/:id", async (req: Request, res: Response) => {
 
 // ==================== SERVICES ====================
 
-// GET all services
+// GET all services (public)
 app.get("/api/services", async (req: Request, res: Response) => {
   try {
     const services = await prisma.service.findMany({
@@ -450,21 +592,24 @@ app.get("/api/services", async (req: Request, res: Response) => {
   }
 });
 
-// CREATE service
-app.post("/api/services", async (req: Request, res: Response) => {
+// CREATE service (protected)
+app.post("/api/services", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { title, description, price, duration, icon_url } = req.body;
-
-    if (!title || !price || !duration) {
-      return res.status(400).json({ error: "Missing required fields" });
+    const parsed = serviceCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid service data", details: parsed.error.flatten() });
     }
+
+    const { title, description, price, duration, icon_url } = parsed.data;
 
     const service = await prisma.service.create({
       data: {
         title,
         description,
-        price: parseFloat(price),
-        duration: parseInt(duration),
+        price: typeof price === "string" ? parseFloat(price) : price,
+        duration: typeof duration === "string" ? parseInt(duration) : duration,
         icon_url,
       },
     });
@@ -477,8 +622,8 @@ app.post("/api/services", async (req: Request, res: Response) => {
 
 // ==================== BOOKINGS ====================
 
-// GET all bookings
-app.get("/api/bookings", async (req: Request, res: Response) => {
+// GET all bookings (protected)
+app.get("/api/bookings", authMiddleware, async (req: Request, res: Response) => {
   try {
     const bookings = await prisma.booking.findMany({
       include: { user: true, service: true },
@@ -490,28 +635,35 @@ app.get("/api/bookings", async (req: Request, res: Response) => {
   }
 });
 
-// GET user bookings
-app.get("/api/bookings/user/:userId", async (req: Request, res: Response) => {
-  try {
-    const bookings = await prisma.booking.findMany({
-      where: { user_id: req.params.userId },
-      include: { service: true },
-      orderBy: { created_at: "desc" },
-    });
-    res.json(bookings);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch bookings" });
-  }
-});
-
-// CREATE booking
-app.post("/api/bookings", async (req: Request, res: Response) => {
-  try {
-    const { user_id, service_id, date, time, notes } = req.body;
-
-    if (!user_id || !service_id || !date || !time) {
-      return res.status(400).json({ error: "Missing required fields" });
+// GET user bookings (protected)
+app.get(
+  "/api/bookings/user/:userId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const bookings = await prisma.booking.findMany({
+        where: { user_id: req.params.userId },
+        include: { service: true },
+        orderBy: { created_at: "desc" },
+      });
+      res.json(bookings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch bookings" });
     }
+  }
+);
+
+// CREATE booking (protected)
+app.post("/api/bookings", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const parsed = bookingCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid booking data", details: parsed.error.flatten() });
+    }
+
+    const { user_id, service_id, date, time, notes } = parsed.data;
 
     const booking = await prisma.booking.create({
       data: {
@@ -529,12 +681,19 @@ app.post("/api/bookings", async (req: Request, res: Response) => {
   }
 });
 
-// UPDATE booking status
-app.put("/api/bookings/:id", async (req: Request, res: Response) => {
+// UPDATE booking status (protected)
+app.put("/api/bookings/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
+    const parsed = bookingUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid booking update data", details: parsed.error.flatten() });
+    }
+
     const booking = await prisma.booking.update({
       where: { id: req.params.id },
-      data: req.body,
+      data: parsed.data,
     });
     res.json(booking);
   } catch (error) {
@@ -544,8 +703,8 @@ app.put("/api/bookings/:id", async (req: Request, res: Response) => {
 
 // ==================== SHOPPING CART ====================
 
-// GET cart items
-app.get("/api/cart/:userId", async (req: Request, res: Response) => {
+// GET cart items (protected)
+app.get("/api/cart/:userId", authMiddleware, async (req: Request, res: Response) => {
   try {
     const cartItems = await prisma.cartItem.findMany({
       where: { user_id: req.params.userId },
@@ -557,8 +716,8 @@ app.get("/api/cart/:userId", async (req: Request, res: Response) => {
   }
 });
 
-// ADD to cart
-app.post("/api/cart", async (req: Request, res: Response) => {
+// ADD to cart (protected)
+app.post("/api/cart", authMiddleware, async (req: Request, res: Response) => {
   try {
     const { user_id, product_id, quantity } = req.body;
 
@@ -578,8 +737,8 @@ app.post("/api/cart", async (req: Request, res: Response) => {
   }
 });
 
-// REMOVE from cart
-app.delete("/api/cart/:id", async (req: Request, res: Response) => {
+// REMOVE from cart (protected)
+app.delete("/api/cart/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
     const cartItem = await prisma.cartItem.delete({
       where: { id: req.params.id },
@@ -592,8 +751,8 @@ app.delete("/api/cart/:id", async (req: Request, res: Response) => {
 
 // ==================== ORDERS ====================
 
-// GET all orders
-app.get("/api/orders", async (req: Request, res: Response) => {
+// GET all orders (protected)
+app.get("/api/orders", authMiddleware, async (req: Request, res: Response) => {
   try {
     const orders = await prisma.order.findMany({
       include: { items: { include: { product: true } }, user: true },
@@ -605,49 +764,50 @@ app.get("/api/orders", async (req: Request, res: Response) => {
   }
 });
 
-// GET user orders
-app.get("/api/orders/user/:userId", async (req: Request, res: Response) => {
-  try {
-    const orders = await prisma.order.findMany({
-      where: { user_id: req.params.userId },
-      include: { items: { include: { product: true } } },
-      orderBy: { created_at: "desc" },
-    });
-    res.json(orders);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch orders" });
-  }
-});
-
-// CREATE order
-app.post("/api/orders", async (req: Request, res: Response) => {
-  try {
-    const {
-      user_id,
-      total_price,
-      payment_method,
-      shipping_address,
-      items,
-    } = req.body;
-
-    if (!user_id || !total_price || !items || items.length === 0) {
-      return res.status(400).json({ error: "Missing required fields" });
+// GET user orders (protected)
+app.get(
+  "/api/orders/user/:userId",
+  authMiddleware,
+  async (req: Request, res: Response) => {
+    try {
+      const orders = await prisma.order.findMany({
+        where: { user_id: req.params.userId },
+        include: { items: { include: { product: true } } },
+        orderBy: { created_at: "desc" },
+      });
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch orders" });
     }
+  }
+);
+
+// CREATE order (protected)
+app.post("/api/orders", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const parsed = orderCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid order data", details: parsed.error.flatten() });
+    }
+
+    const { user_id, total_price, payment_method, shipping_address, items } =
+      parsed.data;
 
     const order = await prisma.order.create({
       data: {
         user_id,
-        total_price: parseFloat(total_price),
+        total_price:
+          typeof total_price === "string" ? parseFloat(total_price) : total_price,
         payment_method,
         shipping_address,
         items: {
-          create: items.map(
-            (item: { product_id: string; quantity: number; price: number }) => ({
-              product_id: item.product_id,
-              quantity: item.quantity,
-              price: item.price,
-            })
-          ),
+          create: items.map((item) => ({
+            product_id: item.product_id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
         },
       },
       include: { items: true },
@@ -661,7 +821,7 @@ app.post("/api/orders", async (req: Request, res: Response) => {
 
 // ==================== REVIEWS ====================
 
-// GET reviews
+// GET reviews (public)
 app.get("/api/reviews", async (req: Request, res: Response) => {
   try {
     const reviews = await prisma.review.findMany({
@@ -674,27 +834,18 @@ app.get("/api/reviews", async (req: Request, res: Response) => {
   }
 });
 
-// CREATE review
-app.post("/api/reviews", async (req: Request, res: Response) => {
+// CREATE review (protected)
+app.post("/api/reviews", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { user_id, course_id, product_id, rating, comment } = req.body;
-
-    if (!user_id || !rating || !comment) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+    const parsed = reviewCreateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res
+        .status(400)
+        .json({ error: "Invalid review data", details: parsed.error.flatten() });
     }
 
     const review = await prisma.review.create({
-      data: {
-        user_id,
-        course_id,
-        product_id,
-        rating,
-        comment,
-      },
+      data: parsed.data,
     });
     res.json(review);
   } catch (error) {
