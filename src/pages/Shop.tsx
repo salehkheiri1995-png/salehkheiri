@@ -141,7 +141,7 @@ export default function Shop() {
 
                     {/* Quick Actions */}
                     <div className="absolute top-3 left-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button className="w-9 h-9 rounded-full bg-background/90 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
+                      <button aria-label="افزودن به علاقه‌مندی‌ها" className="w-9 h-9 rounded-full bg-background/90 flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors">
                         <Heart className="w-4 h-4" />
                       </button>
                     </div>
@@ -177,6 +177,7 @@ export default function Shop() {
                         className="h-9 w-9"
                         disabled={product.stock === 0}
                         onClick={() => handleAddToCart(product)}
+                        aria-label={isInCart(product.id) ? "در سبد خرید" : "افزودن به سبد خرید"}
                       >
                         {isInCart(product.id) ? (
                           <Check className="w-4 h-4" />
