@@ -32,19 +32,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [backendUser, setBackendUser] = useState<BackendUser | null>(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
 
-        if (session?.user) {
-          checkAdminRole(session.user.id);
-        } else {
-          setIsAdmin(false);
-        }
+      if (session?.user) {
+        checkAdminRole(session.user.id);
+      } else {
+        setIsAdmin(false);
       }
-    );
+    });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -61,11 +61,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkAdminRole = async (userId: string) => {
     try {
-      const { data, error } = await supabase.rpc('has_role', {
+      const { data, error } = await supabase.rpc("has_role", {
         _user_id: userId,
-        _role: 'admin'
+        _role: "admin",
       });
-      
+
       if (!error) {
         setIsAdmin(data === true);
       }
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // New: use backend login instead of Supabase email confirmation rules
+  // Login با بک‌اند (Express) بدون وابستگی به تأیید ایمیل Supabase
   const signIn = async (email: string, password: string) => {
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
@@ -90,7 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: new Error(data.error || "Login failed") };
       }
 
-      // Save JWT token for protected backend routes
       localStorage.setItem("auth_token", data.token);
       setBackendUser(data.user as BackendUser);
 
@@ -100,21 +99,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Signup: اول کاربر را در بک‌اند می‌سازد، بعد (در صورت نیاز) در Supabase
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
-      // 1) Create user in backend (used by your Express API)
       const res = await fetch(`${import.meta.env.VITE_API_URL}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, name: fullName }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        return { error: new Error(data.error || "Signup failed") };
+      let data: any = null;
+      let raw: string | null = null;
+
+      try {
+        raw = await res.text();
+        data = raw ? JSON.parse(raw) : null;
+      } catch (parseErr) {
+        console.error("Signup response is not valid JSON:", raw);
+        if (!res.ok) {
+          return {
+            error: new Error("خطا در ثبت‌نام (پاسخ نامعتبر از سرور)"),
+          };
+        }
       }
 
-      // 2) Optionally also create Supabase user (to keep existing DB structure working)
+      if (!res.ok) {
+        const message = data?.error || data?.message || "Signup failed";
+        return { error: new Error(message) };
+      }
+
       const redirectUrl = `${window.location.origin}/`;
       const { error } = await supabase.auth.signUp({
         email,
@@ -144,7 +157,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, session, loading, isAdmin, signIn, signUp, signOut, backendUser }}
+      value={{
+        user,
+        session,
+        loading,
+        isAdmin,
+        signIn,
+        signUp,
+        signOut,
+        backendUser,
+      }}
     >
       {children}
     </AuthContext.Provider>
