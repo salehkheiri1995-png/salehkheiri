@@ -1,7 +1,9 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+import { loginRouter } from "./middleware/auth";
 
 // Load environment variables
 dotenv.config();
@@ -13,11 +15,14 @@ const PORT = process.env.PORT || 3000;
 // ==================== MIDDLEWARE ====================
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
     credentials: true,
   })
 );
 app.use(express.json());
+
+// ==================== AUTH ROUTES ====================
+app.use("/api/auth", loginRouter);
 
 // ==================== HEALTH CHECK ====================
 app.get("/api/health", (req: Request, res: Response) => {
@@ -56,7 +61,13 @@ app.get("/api/users/:id", async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.params.id },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        avatar: true,
+        created_at: true,
         enrollments: true,
         reviews: true,
         bookings: true,
@@ -80,12 +91,22 @@ app.post("/api/users", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Email and password required" });
     }
 
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const user = await prisma.user.create({
       data: {
         email,
         name,
-        password, // ⚠️ In production: hash password with bcrypt
+        password: hashedPassword,
         phone,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        avatar: true,
+        created_at: true,
       },
     });
     res.json(user);
@@ -101,9 +122,25 @@ app.post("/api/users", async (req: Request, res: Response) => {
 // UPDATE user
 app.put("/api/users/:id", async (req: Request, res: Response) => {
   try {
+    const { name, phone, avatar, password } = req.body;
+
+    const data: any = { name, phone, avatar };
+
+    if (password) {
+      data.password = await bcrypt.hash(password, 12);
+    }
+
     const user = await prisma.user.update({
       where: { id: req.params.id },
-      data: req.body,
+      data,
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        avatar: true,
+        created_at: true,
+      },
     });
     res.json(user);
   } catch (error) {
@@ -116,6 +153,14 @@ app.delete("/api/users/:id", async (req: Request, res: Response) => {
   try {
     const user = await prisma.user.delete({
       where: { id: req.params.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        phone: true,
+        avatar: true,
+        created_at: true,
+      },
     });
     res.json({ message: "User deleted", user });
   } catch (error) {
@@ -524,7 +569,7 @@ app.post("/api/cart", async (req: Request, res: Response) => {
     const cartItem = await prisma.cartItem.upsert({
       where: { user_id_product_id: { user_id, product_id } },
       create: { user_id, product_id, quantity: quantity || 1 },
-      update: { quantity: (quantity || 1) },
+      update: { quantity: quantity || 1 },
     });
     res.json(cartItem);
   } catch (error) {
@@ -663,6 +708,14 @@ app.post("/api/reviews", async (req: Request, res: Response) => {
 // 404 handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({ error: "Route not found", path: req.path });
+});
+
+// Global error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error("❌ Unhandled error:", err);
+  res.status(err.status || 500).json({
+    error: err.message || "Internal server error",
+  });
 });
 
 // ==================== SERVER START ====================
