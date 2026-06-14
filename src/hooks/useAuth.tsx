@@ -84,10 +84,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      let data: any = null;
+      let raw: string | null = null;
+
+      try {
+        raw = await res.text();
+        data = raw ? JSON.parse(raw) : null;
+      } catch (parseErr) {
+        console.error("Login response is not valid JSON:", raw);
+        if (!res.ok) {
+          return {
+            error: new Error("خطا در ورود (پاسخ نامعتبر از سرور)"),
+          };
+        }
+      }
 
       if (!res.ok) {
-        return { error: new Error(data.error || "Login failed") };
+        const message = data?.error || data?.message || "Login failed";
+        return { error: new Error(message) };
       }
 
       localStorage.setItem("auth_token", data.token);
