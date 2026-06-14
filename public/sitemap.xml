@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://salehkheiri.lovable.app/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/services</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/courses</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/shop</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/specialists</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/booking</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/portfolio</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/faq</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/contact</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://salehkheiri.lovable.app/auth</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+</urlset>
